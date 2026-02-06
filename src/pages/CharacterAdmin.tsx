@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import { apiFetch } from "../api/client";
-import type { Character } from "../api/types";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { createCharacter as createCharacterAction, fetchCharacters } from "../store/slices/characterSlice";
 
 const defaultStats = {
   HP: 30,
@@ -16,44 +16,34 @@ const defaultStats = {
 
 export default function CharacterAdmin() {
   const { campaignId } = useParams();
-  const [characters, setCharacters] = useState<Character[]>([]);
+  const dispatch = useAppDispatch();
+  const { characters, error } = useAppSelector((state) => state.characters);
   const [name, setName] = useState("");
   const [stats, setStats] = useState(defaultStats);
-  const [error, setError] = useState<string | null>(null);
 
   const statKeys = useMemo(() => Object.keys(stats), [stats]);
 
-  const load = async () => {
-    if (!campaignId) return;
-    const data = await apiFetch<{ characters: Character[] }>(`/campaigns/${campaignId}/characters`);
-    setCharacters(data.characters);
-  };
-
   useEffect(() => {
-    load().catch((err) => setError(err.message));
-  }, [campaignId]);
+    if (!campaignId) return;
+    dispatch(fetchCharacters(campaignId));
+  }, [campaignId, dispatch]);
 
-  const createCharacter = async (event: React.FormEvent) => {
+  const onCreateCharacter = async (event: React.FormEvent) => {
     event.preventDefault();
     if (!campaignId) return;
-    setError(null);
     try {
-      await apiFetch(`/campaigns/${campaignId}/characters`, {
-        method: "POST",
-        body: JSON.stringify({ name, stats }),
-      });
+      await dispatch(createCharacterAction({ campaignId, name, stats })).unwrap();
       setName("");
       setStats(defaultStats);
-      await load();
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      return;
     }
   };
 
   return (
     <div className="panel">
       <h1>Character admin</h1>
-      <form onSubmit={createCharacter} className="form">
+      <form onSubmit={onCreateCharacter} className="form">
         <label>
           Character name
           <input value={name} onChange={(e) => setName(e.target.value)} required />

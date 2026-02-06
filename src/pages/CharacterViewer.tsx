@@ -1,20 +1,18 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { useParams } from "react-router-dom";
-import { apiFetch } from "../api/client";
-import type { Character } from "../api/types";
 import StatCard from "../components/StatCard";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { fetchCharacters } from "../store/slices/characterSlice";
 
 export default function CharacterViewer() {
   const { campaignId } = useParams();
-  const [characters, setCharacters] = useState<Character[]>([]);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { characters, error } = useAppSelector((state) => state.characters);
 
   useEffect(() => {
     if (!campaignId) return;
-    apiFetch<{ characters: Character[] }>(`/campaigns/${campaignId}/characters`)
-      .then((data) => setCharacters(data.characters))
-      .catch((err) => setError(err.message));
-  }, [campaignId]);
+    dispatch(fetchCharacters(campaignId));
+  }, [campaignId, dispatch]);
 
   return (
     <div className="panel">

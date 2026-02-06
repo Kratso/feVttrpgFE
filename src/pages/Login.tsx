@@ -1,56 +1,53 @@
 import { useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
-import { apiFetch } from "../api/client";
-import { useAuth } from "../context/AuthContext";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { login } from "../store/slices/authSlice";
+import Panel from "../components/ui/Panel";
+import Field from "../components/ui/Field";
+import TextInput from "../components/ui/TextInput";
+import Button from "../components/ui/Button";
+import ErrorBanner from "../components/ui/ErrorBanner";
 
 export default function Login() {
   const navigate = useNavigate();
-  const { refresh } = useAuth();
+  const dispatch = useAppDispatch();
+  const { error } = useAppSelector((state) => state.auth);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
   const onSubmit = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     try {
-      await apiFetch("/auth/login", {
-        method: "POST",
-        body: JSON.stringify({ email, password }),
-      });
-      await refresh();
+      await dispatch(login({ email, password })).unwrap();
       navigate("/campaigns");
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      return;
     }
   };
 
   return (
-    <div className="panel">
+    <Panel>
       <h1>Welcome back</h1>
       <p className="muted">Log in to manage campaigns, characters, and maps.</p>
       <form onSubmit={onSubmit} className="form">
-        <label>
-          Email
-          <input value={email} onChange={(e) => setEmail(e.target.value)} required />
-        </label>
-        <label>
-          Password
-          <input
+        <Field label="Email">
+          <TextInput value={email} onChange={(e) => setEmail(e.target.value)} required />
+        </Field>
+        <Field label="Password">
+          <TextInput
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
             required
           />
-        </label>
-        {error && <div className="error">{error}</div>}
-        <button type="submit" className="primary">
+        </Field>
+        <ErrorBanner message={error} />
+        <Button type="submit" variant="primary">
           Log in
-        </button>
+        </Button>
       </form>
       <p className="muted">
         Need an account? <Link to="/register">Register</Link>
       </p>
-    </div>
+    </Panel>
   );
 }

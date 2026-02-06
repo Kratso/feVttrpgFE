@@ -1,19 +1,26 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import { io, Socket } from "socket.io-client";
-import { apiFetch } from "../api/client";
-import type { MapInfo, Token } from "../api/types";
+import type { Token } from "../api/types";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import {
+  createMap as createMapAction,
+  createToken as createTokenAction,
+  fetchMapDetail,
+  fetchMaps,
+  fetchTokens,
+  selectMap,
+  updateToken,
+} from "../store/slices/mapSlice";
+import { fetchCampaignRole } from "../store/slices/campaignSlice";
 
 const WS_URL = import.meta.env.VITE_WS_URL ?? "http://localhost:4000";
 
 export default function MapViewer() {
   const { campaignId } = useParams();
-  const [maps, setMaps] = useState<MapInfo[]>([]);
-  const [selectedMapId, setSelectedMapId] = useState<string | null>(null);
-  const [map, setMap] = useState<MapInfo | null>(null);
-  const [tokens, setTokens] = useState<Token[]>([]);
-  const [role, setRole] = useState<"DM" | "PLAYER" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { maps, selectedMapId, map, tokens, error } = useAppSelector((state) => state.maps);
+  const { role } = useAppSelector((state) => state.campaigns);
   const [newMapName, setNewMapName] = useState("");
   const [newMapUrl, setNewMapUrl] = useState("");
   const [newGridSize, setNewGridSize] = useState(50);
@@ -34,69 +41,15 @@ export default function MapViewer() {
 
   useEffect(() => {
     if (!campaignId) return;
-    apiFetch<{ maps: MapInfo[] }>(`/campaigns/${campaignId}/maps`)
-      .then((data) => {
-        setMaps(data.maps);
-        setSelectedMapId(data.maps[0]?.id ?? null);
-      })
-      .catch((err) => setError(err.message));
-
-    apiFetch<{ role: "DM" | "PLAYER" }>(`/campaigns/${campaignId}/role`)
-      .then((data) => setRole(data.role))
-      .catch((err) => setError(err.message));
-  }, [campaignId]);
-
-  const createMap = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!campaignId) return;
-    try {
-      await apiFetch(`/campaigns/${campaignId}/maps`, {
-        method: "POST",
-        body: JSON.stringify({
-          name: newMapName,
-          imageUrl: newMapUrl,
-          gridSize: newGridSize,
-        }),
-      });
-      setNewMapName("");
-      setNewMapUrl("");
-      const data = await apiFetch<{ maps: MapInfo[] }>(`/campaigns/${campaignId}/maps`);
-      setMaps(data.maps);
-      setSelectedMapId(data.maps[0]?.id ?? null);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
-
-  const createToken = async (event: React.FormEvent) => {
-    event.preventDefault();
-    if (!selectedMapId) return;
-    try {
-      await apiFetch(`/maps/${selectedMapId}/tokens`, {
-        method: "POST",
-        body: JSON.stringify({
-          label: newTokenLabel,
-          x: newTokenX,
-          y: newTokenY,
-          color: newTokenColor,
-        }),
-      });
-      const data = await apiFetch<{ tokens: Token[] }>(`/maps/${selectedMapId}/tokens`);
-      setTokens(data.tokens);
-    } catch (err) {
-      setError((err as Error).message);
-    }
-  };
+    dispatch(fetchMaps(campaignId));
+    dispatch(fetchCampaignRole(campaignId));
+  }, [campaignId, dispatch]);
 
   useEffect(() => {
     if (!selectedMapId) return;
-    apiFetch<{ map: MapInfo }>(`/maps/${selectedMapId}`)
-      .then((data) => setMap(data.map))
-      .catch((err) => setError(err.message));
-    apiFetch<{ tokens: Token[] }>(`/maps/${selectedMapId}/tokens`)
-      .then((data) => setTokens(data.tokens))
-      .catch((err) => setError(err.message));
-  }, [selectedMapId]);
+    dispatch(fetchMapDetail(selectedMapId));
+    dispatch(fetchTokens(selectedMapId));
+  }, [selectedMapId, dispatch]);
 
   useEffect(() => {
     if (!selectedMapId) return;
@@ -105,13 +58,50 @@ export default function MapViewer() {
 
     socket.emit("map:join", { mapId: selectedMapId });
     socket.on("token:moved", ({ token }: { token: Token }) => {
-      setTokens((prev) => prev.map((t) => (t.id === token.id ? token : t)));
+      dispatch(updateToken(token));
     });
 
     return () => {
       socket.disconnect();
     };
-  }, [selectedMapId]);
+  }, [selectedMapId, dispatch]);
+
+  const onCreateMap = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!campaignId) return;
+    try {
+      await dispatch(
+        createMapAction({
+          campaignId,
+          name: newMapName,
+          imageUrl: newMapUrl,
+          gridSize: newGridSize,
+        })
+      ).unwrap();
+      setNewMapName("");
+      setNewMapUrl("");
+    } catch {
+      return;
+    }
+  };
+
+  const onCreateToken = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!selectedMapId) return;
+    try {
+      await dispatch(
+        createTokenAction({
+          mapId: selectedMapId,
+          label: newTokenLabel,
+          x: newTokenX,
+          y: newTokenY,
+          color: newTokenColor,
+        })
+      ).unwrap();
+    } catch {
+      return;
+    }
+  };
 
   const startDrag = (tokenId: string) => {
     if (role !== "DM") return;
@@ -127,16 +117,16 @@ export default function MapViewer() {
     const tokenId = dragTokenId.current;
     if (!tokenId) return;
 
+    const token = tokens.find((t) => t.id === tokenId);
+    if (!token) return;
+
     const rect = (event.currentTarget as HTMLDivElement).getBoundingClientRect();
     const relX = event.clientX - rect.left - map.gridOffsetX;
     const relY = event.clientY - rect.top - map.gridOffsetY;
     const x = Math.max(0, Math.round(relX / map.gridSize));
     const y = Math.max(0, Math.round(relY / map.gridSize));
 
-    setTokens((prev) =>
-      prev.map((t) => (t.id === tokenId ? { ...t, x, y } : t))
-    );
-
+    dispatch(updateToken({ ...token, x, y }));
     socketRef.current?.emit("token:move", { mapId: map.id, tokenId, x, y });
   };
 
@@ -147,7 +137,7 @@ export default function MapViewer() {
       <div className="toolbar">
         <select
           value={selectedMapId ?? ""}
-          onChange={(e) => setSelectedMapId(e.target.value)}
+          onChange={(e) => dispatch(selectMap(e.target.value || null))}
         >
           {maps.map((m) => (
             <option key={m.id} value={m.id}>
@@ -160,7 +150,7 @@ export default function MapViewer() {
 
       {role === "DM" && (
         <div className="split">
-          <form onSubmit={createMap} className="form">
+          <form onSubmit={onCreateMap} className="form">
             <h3>Create map</h3>
             <label>
               Map name
@@ -184,7 +174,7 @@ export default function MapViewer() {
             </button>
           </form>
 
-          <form onSubmit={createToken} className="form">
+          <form onSubmit={onCreateToken} className="form">
             <h3>Create token</h3>
             <label>
               Label
@@ -212,12 +202,7 @@ export default function MapViewer() {
       )}
 
       {map && (
-        <div
-          className="map-stage"
-          onMouseMove={onMove}
-          onMouseUp={endDrag}
-          onMouseLeave={endDrag}
-        >
+        <div className="map-stage" onMouseMove={onMove} onMouseUp={endDrag} onMouseLeave={endDrag}>
           <img src={map.imageUrl} alt={map.name} className="map-image" />
           <div className="grid-overlay" style={gridStyle} />
           {tokens.map((token) => (

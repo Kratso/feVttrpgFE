@@ -1,62 +1,56 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
-import { apiFetch } from "../api/client";
-import type { CampaignSummary } from "../api/types";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { createCampaign, fetchCampaigns } from "../store/slices/campaignSlice";
+import Panel from "../components/ui/Panel";
+import TextInput from "../components/ui/TextInput";
+import Button from "../components/ui/Button";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import CardLink from "../components/ui/CardLink";
 
 export default function Campaigns() {
-  const [campaigns, setCampaigns] = useState<CampaignSummary[]>([]);
+  const dispatch = useAppDispatch();
+  const { campaigns, error } = useAppSelector((state) => state.campaigns);
   const [name, setName] = useState("");
-  const [error, setError] = useState<string | null>(null);
-
-  const load = async () => {
-    const data = await apiFetch<{ campaigns: CampaignSummary[] }>("/campaigns");
-    setCampaigns(data.campaigns);
-  };
 
   useEffect(() => {
-    load().catch((err) => setError(err.message));
-  }, []);
+    dispatch(fetchCampaigns());
+  }, [dispatch]);
 
-  const createCampaign = async (event: React.FormEvent) => {
+  const onCreateCampaign = async (event: React.FormEvent) => {
     event.preventDefault();
-    setError(null);
     try {
-      await apiFetch("/campaigns", {
-        method: "POST",
-        body: JSON.stringify({ name }),
-      });
+      await dispatch(createCampaign({ name })).unwrap();
       setName("");
-      await load();
-    } catch (err) {
-      setError((err as Error).message);
+    } catch {
+      return;
     }
   };
 
   return (
-    <div className="panel">
+    <Panel>
       <h1>Campaigns</h1>
-      <form onSubmit={createCampaign} className="inline-form">
-        <input
+      <form onSubmit={onCreateCampaign} className="inline-form">
+        <TextInput
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="New campaign name"
           required
         />
-        <button type="submit" className="primary">
+        <Button type="submit" variant="primary">
           Create
-        </button>
+        </Button>
       </form>
-      {error && <div className="error">{error}</div>}
+      <ErrorBanner message={error} />
 
       <div className="grid">
         {campaigns.map((campaign) => (
-          <Link key={campaign.id} to={`/campaigns/${campaign.id}`} className="card">
+          <CardLink key={campaign.id} to={`/campaigns/${campaign.id}`}>
             <h3>{campaign.name}</h3>
             <p className="muted">Role: {campaign.role}</p>
             <span className="link">Open dashboard →</span>
-          </Link>
+          </CardLink>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }

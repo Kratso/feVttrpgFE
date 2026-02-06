@@ -1,4 +1,5 @@
 import { Navigate, Route, Routes, Link } from "react-router-dom";
+import { useEffect } from "react";
 import "./App.css";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
@@ -7,10 +8,11 @@ import CampaignDashboard from "./pages/CampaignDashboard";
 import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
 import MapViewer from "./pages/MapViewer";
-import { useAuth } from "./context/AuthContext";
+import { useAppDispatch, useAppSelector } from "./store/hooks";
+import { fetchMe, logout } from "./store/slices/authSlice";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
-  const { user, loading } = useAuth();
+  const { user, loading } = useAppSelector((state) => state.auth);
   if (loading) {
     return <div className="panel">Loading...</div>;
   }
@@ -21,7 +23,8 @@ function RequireAuth({ children }: { children: React.ReactNode }) {
 }
 
 function Layout({ children }: { children: React.ReactNode }) {
-  const { user, logout } = useAuth();
+  const dispatch = useAppDispatch();
+  const user = useAppSelector((state) => state.auth.user);
   return (
     <div className="app-shell">
       <header className="topbar">
@@ -32,7 +35,7 @@ function Layout({ children }: { children: React.ReactNode }) {
         {user && (
           <div className="user-info">
             <span>{user.displayName}</span>
-            <button className="ghost" onClick={() => logout()}>
+            <button className="ghost" onClick={() => dispatch(logout())}>
               Logout
             </button>
           </div>
@@ -44,6 +47,11 @@ function Layout({ children }: { children: React.ReactNode }) {
 }
 
 function App() {
+  const dispatch = useAppDispatch();
+  useEffect(() => {
+    dispatch(fetchMe());
+  }, [dispatch]);
+
   return (
     <Layout>
       <Routes>

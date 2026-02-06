@@ -1,20 +1,19 @@
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
 import { Link, useParams } from "react-router-dom";
-import { apiFetch } from "../api/client";
+import { useAppDispatch, useAppSelector } from "../store/hooks";
+import { fetchCampaignRole } from "../store/slices/campaignSlice";
 
 export default function CampaignDashboard() {
   const { campaignId } = useParams();
-  const [role, setRole] = useState<"DM" | "PLAYER" | null>(null);
-  const [error, setError] = useState<string | null>(null);
+  const dispatch = useAppDispatch();
+  const { role, error } = useAppSelector((state) => state.campaigns);
 
   useEffect(() => {
     if (!campaignId) {
       return;
     }
-    apiFetch<{ role: "DM" | "PLAYER" }>(`/campaigns/${campaignId}/role`)
-      .then((data) => setRole(data.role))
-      .catch((err) => setError(err.message));
-  }, [campaignId]);
+    dispatch(fetchCampaignRole(campaignId));
+  }, [campaignId, dispatch]);
 
   if (!campaignId) {
     return <div className="panel">Missing campaign.</div>;
