@@ -1,7 +1,10 @@
 import { useEffect } from "react";
-import { Link, useParams } from "react-router-dom";
+import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchCampaignRole } from "../store/slices/campaignSlice";
+import Panel from "../components/ui/Panel";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import CardLink from "../components/ui/CardLink";
 
 export default function CampaignDashboard() {
   const { campaignId } = useParams();
@@ -16,29 +19,29 @@ export default function CampaignDashboard() {
   }, [campaignId, dispatch]);
 
   if (!campaignId) {
-    return <div className="panel">Missing campaign.</div>;
+    return <Panel>Missing campaign.</Panel>;
   }
 
   return (
-    <div className="panel">
+    <Panel>
       <h1>Campaign dashboard</h1>
-      {error && <div className="error">{error}</div>}
+      <ErrorBanner message={error} />
       <div className="grid">
         {role === "DM" && (
-          <Link to={`/campaigns/${campaignId}/characters/admin`} className="card">
+          <CardLink to={`/campaigns/${campaignId}/characters/admin`}>
             <h3>Admin character editor</h3>
             <p className="muted">Create and update characters for the party.</p>
-          </Link>
+          </CardLink>
         )}
-        <Link to={`/campaigns/${campaignId}/characters/view`} className="card">
+        <CardLink to={`/campaigns/${campaignId}/characters/view`}>
           <h3>Character viewer</h3>
           <p className="muted">Browse character sheets in a stat-viewer layout.</p>
-        </Link>
-        <Link to={`/campaigns/${campaignId}/maps`} className="card">
+        </CardLink>
+        <CardLink to={`/campaigns/${campaignId}/maps`}>
           <h3>Map viewer</h3>
           <p className="muted">Grid overlay with tokens and realtime updates.</p>
-        </Link>
+        </CardLink>
       </div>
-    </div>
+    </Panel>
   );
 }

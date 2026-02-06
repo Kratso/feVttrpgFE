@@ -10,6 +10,7 @@ import CharacterViewer from "./pages/CharacterViewer";
 import MapViewer from "./pages/MapViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { fetchMe, logout } from "./store/slices/authSlice";
+import Button from "./components/ui/Button";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAppSelector((state) => state.auth);
@@ -35,9 +36,9 @@ function Layout({ children }: { children: React.ReactNode }) {
         {user && (
           <div className="user-info">
             <span>{user.displayName}</span>
-            <button className="ghost" onClick={() => dispatch(logout())}>
+            <Button variant="ghost" onClick={() => dispatch(logout())}>
               Logout
-            </button>
+            </Button>
           </div>
         )}
       </header>

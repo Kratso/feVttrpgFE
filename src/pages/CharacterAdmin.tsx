@@ -2,6 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { createCharacter as createCharacterAction, fetchCharacters } from "../store/slices/characterSlice";
+import Panel from "../components/ui/Panel";
+import Field from "../components/ui/Field";
+import TextInput from "../components/ui/TextInput";
+import Button from "../components/ui/Button";
+import ErrorBanner from "../components/ui/ErrorBanner";
+import Card from "../components/ui/Card";
 
 const defaultStats = {
   HP: 30,
@@ -41,18 +47,16 @@ export default function CharacterAdmin() {
   };
 
   return (
-    <div className="panel">
+    <Panel>
       <h1>Character admin</h1>
       <form onSubmit={onCreateCharacter} className="form">
-        <label>
-          Character name
-          <input value={name} onChange={(e) => setName(e.target.value)} required />
-        </label>
+        <Field label="Character name">
+          <TextInput value={name} onChange={(e) => setName(e.target.value)} required />
+        </Field>
         <div className="stats-grid">
           {statKeys.map((key) => (
-            <label key={key}>
-              {key}
-              <input
+            <Field key={key} label={key}>
+              <TextInput
                 type="number"
                 value={stats[key as keyof typeof stats]}
                 onChange={(e) =>
@@ -62,18 +66,18 @@ export default function CharacterAdmin() {
                   }))
                 }
               />
-            </label>
+            </Field>
           ))}
         </div>
-        {error && <div className="error">{error}</div>}
-        <button type="submit" className="primary">
+        <ErrorBanner message={error} />
+        <Button type="submit" variant="primary">
           Create character
-        </button>
+        </Button>
       </form>
 
       <div className="grid">
         {characters.map((character) => (
-          <div key={character.id} className="card">
+          <Card key={character.id}>
             <h3>{character.name}</h3>
             <p className="muted">Owner: {character.owner?.displayName ?? "Unassigned"}</p>
             <div className="stat-row">
@@ -84,9 +88,9 @@ export default function CharacterAdmin() {
                 </div>
               ))}
             </div>
-          </div>
+          </Card>
         ))}
       </div>
-    </div>
+    </Panel>
   );
 }

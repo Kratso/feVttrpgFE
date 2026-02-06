@@ -13,6 +13,13 @@ import {
   updateToken,
 } from "../store/slices/mapSlice";
 import { fetchCampaignRole } from "../store/slices/campaignSlice";
+import Panel from "../components/ui/Panel";
+import Toolbar from "../components/ui/Toolbar";
+import SelectInput from "../components/ui/SelectInput";
+import Field from "../components/ui/Field";
+import TextInput from "../components/ui/TextInput";
+import Button from "../components/ui/Button";
+import ErrorBanner from "../components/ui/ErrorBanner";
 
 const WS_URL = import.meta.env.VITE_WS_URL ?? "http://localhost:4000";
 
@@ -131,11 +138,11 @@ export default function MapViewer() {
   };
 
   return (
-    <div className="panel">
+    <Panel>
       <h1>Map viewer</h1>
-      {error && <div className="error">{error}</div>}
-      <div className="toolbar">
-        <select
+      <ErrorBanner message={error} />
+      <Toolbar>
+        <SelectInput
           value={selectedMapId ?? ""}
           onChange={(e) => dispatch(selectMap(e.target.value || null))}
         >
@@ -144,59 +151,52 @@ export default function MapViewer() {
               {m.name}
             </option>
           ))}
-        </select>
+        </SelectInput>
         <span className="muted">Role: {role ?? "..."}</span>
-      </div>
+      </Toolbar>
 
       {role === "DM" && (
         <div className="split">
           <form onSubmit={onCreateMap} className="form">
             <h3>Create map</h3>
-            <label>
-              Map name
-              <input value={newMapName} onChange={(e) => setNewMapName(e.target.value)} required />
-            </label>
-            <label>
-              Image URL
-              <input value={newMapUrl} onChange={(e) => setNewMapUrl(e.target.value)} required />
-            </label>
-            <label>
-              Grid size (px)
-              <input
+            <Field label="Map name">
+              <TextInput value={newMapName} onChange={(e) => setNewMapName(e.target.value)} required />
+            </Field>
+            <Field label="Image URL">
+              <TextInput value={newMapUrl} onChange={(e) => setNewMapUrl(e.target.value)} required />
+            </Field>
+            <Field label="Grid size (px)">
+              <TextInput
                 type="number"
                 value={newGridSize}
                 onChange={(e) => setNewGridSize(Number(e.target.value))}
                 min={20}
               />
-            </label>
-            <button type="submit" className="primary">
+            </Field>
+            <Button type="submit" variant="primary">
               Add map
-            </button>
+            </Button>
           </form>
 
           <form onSubmit={onCreateToken} className="form">
             <h3>Create token</h3>
-            <label>
-              Label
-              <input value={newTokenLabel} onChange={(e) => setNewTokenLabel(e.target.value)} />
-            </label>
+            <Field label="Label">
+              <TextInput value={newTokenLabel} onChange={(e) => setNewTokenLabel(e.target.value)} />
+            </Field>
             <div className="stats-grid">
-              <label>
-                X
-                <input type="number" value={newTokenX} onChange={(e) => setNewTokenX(Number(e.target.value))} />
-              </label>
-              <label>
-                Y
-                <input type="number" value={newTokenY} onChange={(e) => setNewTokenY(Number(e.target.value))} />
-              </label>
+              <Field label="X">
+                <TextInput type="number" value={newTokenX} onChange={(e) => setNewTokenX(Number(e.target.value))} />
+              </Field>
+              <Field label="Y">
+                <TextInput type="number" value={newTokenY} onChange={(e) => setNewTokenY(Number(e.target.value))} />
+              </Field>
             </div>
-            <label>
-              Color
-              <input type="color" value={newTokenColor} onChange={(e) => setNewTokenColor(e.target.value)} />
-            </label>
-            <button type="submit" className="primary">
+            <Field label="Color">
+              <TextInput type="color" value={newTokenColor} onChange={(e) => setNewTokenColor(e.target.value)} />
+            </Field>
+            <Button type="submit" variant="primary">
               Add token
-            </button>
+            </Button>
           </form>
         </div>
       )}
@@ -224,6 +224,6 @@ export default function MapViewer() {
           ))}
         </div>
       )}
-    </div>
+    </Panel>
   );
 }
