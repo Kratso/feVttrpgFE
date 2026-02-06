@@ -24,10 +24,21 @@ export const fetchCharacters = createAsyncThunk(
 
 export const createCharacter = createAsyncThunk(
   "characters/create",
-  async (payload: { campaignId: string; name: string; stats: Record<string, number> }) => {
+  async (payload: {
+    campaignId: string;
+    name: string;
+    stats: Record<string, number>;
+    ownerId?: string;
+    kind?: "PLAYER" | "NPC" | "ENEMY";
+  }) => {
     await apiFetch(`/campaigns/${payload.campaignId}/characters`, {
       method: "POST",
-      body: JSON.stringify({ name: payload.name, stats: payload.stats }),
+      body: JSON.stringify({
+        name: payload.name,
+        stats: payload.stats,
+        ownerId: payload.ownerId,
+        kind: payload.kind,
+      }),
     });
     const data = await apiFetch<{ characters: Character[] }>(`/campaigns/${payload.campaignId}/characters`);
     return data.characters;

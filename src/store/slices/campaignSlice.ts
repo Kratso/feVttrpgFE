@@ -1,11 +1,12 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { apiFetch } from "../../api/client";
-import type { CampaignSummary } from "../../api/types";
+import type { CampaignMember, CampaignSummary } from "../../api/types";
 
 type CampaignState = {
   campaigns: CampaignSummary[];
   selectedCampaignId: string | null;
   role: "DM" | "PLAYER" | null;
+  members: CampaignMember[];
   loading: boolean;
   error: string | null;
 };
@@ -14,6 +15,7 @@ const initialState: CampaignState = {
   campaigns: [],
   selectedCampaignId: null,
   role: null,
+  members: [],
   loading: false,
   error: null,
 };
@@ -39,6 +41,14 @@ export const fetchCampaignRole = createAsyncThunk(
   async (campaignId: string) => {
     const data = await apiFetch<{ role: "DM" | "PLAYER" }>(`/campaigns/${campaignId}/role`);
     return { campaignId, role: data.role };
+  }
+);
+
+export const fetchCampaignMembers = createAsyncThunk(
+  "campaigns/fetchMembers",
+  async (campaignId: string) => {
+    const data = await apiFetch<{ members: CampaignMember[] }>(`/campaigns/${campaignId}/members`);
+    return data.members;
   }
 );
 
@@ -72,6 +82,9 @@ const campaignSlice = createSlice({
       })
       .addCase(fetchCampaignRole.fulfilled, (state, action) => {
         state.role = action.payload.role;
+      })
+      .addCase(fetchCampaignMembers.fulfilled, (state, action) => {
+        state.members = action.payload;
       });
   },
 });

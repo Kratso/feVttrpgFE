@@ -14,8 +14,19 @@ export type Character = {
   id: string;
   name: string;
   stats: Record<string, number>;
+  kind: "PLAYER" | "NPC" | "ENEMY";
   owner?: {
     id: string;
+    displayName: string;
+  };
+};
+
+export type CampaignMember = {
+  id: string;
+  role: "DM" | "PLAYER";
+  user: {
+    id: string;
+    email: string;
     displayName: string;
   };
 };
