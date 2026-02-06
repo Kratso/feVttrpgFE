@@ -16,6 +16,31 @@
   z-index: 20;
 }
 
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  margin-left: 2rem;
+}
+
+.nav-link {
+  color: #c7d2fe;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.breadcrumbs {
+  margin-bottom: 1rem;
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.crumb {
+  color: #e2e8f0;
+  text-decoration: none;
+  font-size: 0.9rem;
+}
+
 .brand {
   font-size: 1.2rem;
   font-weight: 700;
