@@ -49,6 +49,7 @@ export type GameClass = {
   name: string;
   baseStats?: Record<string, number>;
   weaponRanks?: Record<string, string>;
+  promotesTo?: string[];
 };
 
 export type MapInfo = {

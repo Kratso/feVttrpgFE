@@ -43,6 +43,30 @@ export default function CharacterAdmin() {
   const [ownerId, setOwnerId] = useState<string>("");
 
   const statKeys = useMemo(() => Object.keys(stats), [stats]);
+  const classTreeOptions = useMemo(() => {
+    const byName = new Map(classes.map((gameClass) => [gameClass.name, gameClass]));
+    const childNames = new Set<string>();
+
+    classes.forEach((gameClass) => {
+      (gameClass.promotesTo ?? []).forEach((child) => childNames.add(child));
+    });
+
+    const roots = classes.filter((gameClass) => !childNames.has(gameClass.name));
+    const options: Array<{ name: string; label: string }> = [];
+
+    const walk = (name: string, depth: number) => {
+      const node = byName.get(name);
+      if (!node) return;
+      options.push({ name: node.name, label: `${"— ".repeat(depth)}${node.name}` });
+      (node.promotesTo ?? []).forEach((child) => walk(child, depth + 1));
+    };
+
+    roots.forEach((root) => walk(root.name, 0));
+    if (options.length === 0) {
+      return classes.map((gameClass) => ({ name: gameClass.name, label: gameClass.name }));
+    }
+    return options;
+  }, [classes]);
 
   useEffect(() => {
     if (!campaignId) return;
@@ -123,9 +147,9 @@ export default function CharacterAdmin() {
           <Field label="Class">
             <SelectInput value={className} onChange={(e) => handleClassChange(e.target.value)}>
               <option value="">Select class</option>
-              {classes.map((gameClass) => (
-                <option key={gameClass.id} value={gameClass.name}>
-                  {gameClass.name}
+              {classTreeOptions.map((option) => (
+                <option key={option.name} value={option.name}>
+                  {option.label}
                 </option>
               ))}
             </SelectInput>
