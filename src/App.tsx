@@ -8,6 +8,7 @@ import CampaignDashboard from "./pages/CampaignDashboard";
 import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
 import MapViewer from "./pages/MapViewer";
+import ClassViewer from "./pages/ClassViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { fetchMe, logout } from "./store/slices/authSlice";
 import Button from "./components/ui/Button";
@@ -58,6 +59,9 @@ function Layout({ children }: { children: React.ReactNode }) {
           <div className="nav-links">
             <Link to="/campaigns" className="nav-link">
               Campaigns
+            </Link>
+            <Link to="/classes" className="nav-link">
+              Classes
             </Link>
           </div>
         )}
@@ -147,6 +151,14 @@ function App() {
           element={
             <RequireAuth>
               <CharacterViewer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/classes"
+          element={
+            <RequireAuth>
+              <ClassViewer />
             </RequireAuth>
           }
         />

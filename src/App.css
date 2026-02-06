@@ -178,6 +178,38 @@ button {
   width: auto;
 }
 
+.tree-item {
+  background: transparent;
+  border: none;
+  color: #e2e8f0;
+  cursor: pointer;
+  padding: 0.25rem 0;
+  text-align: left;
+  width: 100%;
+}
+
+.tree-item.active {
+  color: #a5b4fc;
+  font-weight: 700;
+}
+
+.class-tree {
+  list-style: none;
+  margin: 0.5rem 0 0 0;
+  padding-left: 1rem;
+  border-left: 1px solid rgba(148, 163, 184, 0.25);
+}
+
+.class-tree-panel {
+  max-height: 320px;
+  overflow-y: auto;
+  padding-right: 0.5rem;
+}
+
+.class-tree > li {
+  margin: 0.35rem 0;
+}
+
 .stat-row {
   display: flex;
   flex-wrap: wrap;
@@ -244,6 +276,7 @@ button {
   gap: 1.5rem;
   grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
   margin-bottom: 1.5rem;
+  align-items: start;
 }
 
 .map-stage {

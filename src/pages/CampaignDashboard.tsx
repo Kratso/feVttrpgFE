@@ -41,6 +41,10 @@ export default function CampaignDashboard() {
           <h3>Map viewer</h3>
           <p className="muted">Grid overlay with tokens and realtime updates.</p>
         </CardLink>
+        <CardLink to="/classes">
+          <h3>Class viewer</h3>
+          <p className="muted">Browse class base stats and promotions.</p>
+        </CardLink>
       </div>
     </Panel>
   );

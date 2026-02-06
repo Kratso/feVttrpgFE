@@ -47,9 +47,16 @@ export type CampaignMember = {
 export type GameClass = {
   id: string;
   name: string;
+  description?: string | null;
   baseStats?: Record<string, number>;
+  growths?: Record<string, number>;
+  maxStats?: Record<string, number>;
   weaponRanks?: Record<string, string>;
   promotesTo?: string[];
+  skills?: string[];
+  types?: string[];
+  powerBonus?: number;
+  expBonus?: number;
 };
 
 export type MapInfo = {
