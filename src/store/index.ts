@@ -3,6 +3,7 @@ import authReducer from "./slices/authSlice.ts";
 import campaignReducer from "./slices/campaignSlice.ts";
 import characterReducer from "./slices/characterSlice.ts";
 import mapReducer from "./slices/mapSlice.ts";
+import classReducer from "./slices/classSlice.ts";
 
 export const store = configureStore({
   reducer: {
@@ -10,6 +11,7 @@ export const store = configureStore({
     campaigns: campaignReducer,
     characters: characterReducer,
     maps: mapReducer,
+    classes: classReducer,
   },
 });
 

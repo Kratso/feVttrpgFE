@@ -27,9 +27,18 @@ export const createCharacter = createAsyncThunk(
   async (payload: {
     campaignId: string;
     name: string;
-    stats: Record<string, number>;
+    stats: Record<string, number> | {
+      baseStats?: Record<string, number>;
+      growths?: Record<string, number>;
+      bonusStats?: Record<string, number>;
+      weaponRanks?: Record<string, string>;
+    };
     ownerId?: string;
     kind?: "PLAYER" | "NPC" | "ENEMY";
+    className?: string;
+    level?: number;
+    exp?: number;
+    weaponSkills?: Array<{ weapon: string; rank: string }>;
   }) => {
     await apiFetch(`/campaigns/${payload.campaignId}/characters`, {
       method: "POST",
@@ -38,6 +47,10 @@ export const createCharacter = createAsyncThunk(
         stats: payload.stats,
         ownerId: payload.ownerId,
         kind: payload.kind,
+        className: payload.className,
+        level: payload.level,
+        exp: payload.exp,
+        weaponSkills: payload.weaponSkills,
       }),
     });
     const data = await apiFetch<{ characters: Character[] }>(`/campaigns/${payload.campaignId}/characters`);
