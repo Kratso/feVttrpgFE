@@ -1,0 +1,61 @@
+.app-shell {
+  min-height: 100vh;
+  color: #e5e7eb;
+  background: radial-gradient(circle at top, #1f2937 0%, #0f172a 60%);
+}
+
+.topbar {
+  display: flex;
+  align-items: center;
+  padding: 1.25rem 2rem;
+  background: rgba(15, 23, 42, 0.85);
+  border-bottom: 1px solid rgba(148, 163, 184, 0.2);
+  position: sticky;
+  top: 0;
+  backdrop-filter: blur(12px);
+  z-index: 20;
+}
+
+.nav-links {
+  display: flex;
+  gap: 1rem;
+  margin-left: 2rem;
+}
+
+.nav-link {
+  color: #c7d2fe;
+  font-weight: 600;
+  text-decoration: none;
+}
+
+.brand {
+  font-size: 1.2rem;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  color: #f8fafc;
+  text-decoration: none;
+}
+
+.spacer {
+  flex: 1;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.content {
+  padding: 2rem;
+  max-width: 1100px;
+  margin: 0 auto;
+}
+
+.split {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-bottom: 1.5rem;
+  align-items: start;
+}
