@@ -15,7 +15,9 @@ const initialState: AuthState = {
 };
 
 export const fetchMe = createAsyncThunk("auth/fetchMe", async () => {
-  const data = await apiFetch<{ user: User | null }>("/auth/me");
+  const data = await apiFetch<{ user: User | null }>("/auth/me", {
+    skipUnauthorizedHandling: true,
+  });
   return data.user ?? null;
 });
 

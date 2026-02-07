@@ -6,6 +6,7 @@ import {
   createMap as createMapAction,
   createToken as createTokenAction,
   selectMap,
+  updateMap,
   updateToken,
 } from "../../store/slices/mapSlice";
 import Panel from "../../components/ui/Panel";
@@ -13,6 +14,7 @@ import ErrorBanner from "../../components/ui/ErrorBanner";
 import MapToolbar from "./components/MapToolbar";
 import CreateMapForm from "./components/CreateMapForm";
 import CreateTokenForm from "./components/CreateTokenForm";
+import MapGridForm from "./components/MapGridForm";
 import MapStage from "./components/MapStage";
 import { useMapBootstrap } from "./hooks/useMapBootstrap";
 import { useMapDetail } from "./hooks/useMapDetail";
@@ -36,7 +38,7 @@ export default function MapViewer() {
 
   const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved);
 
-  const handleCreateMap = async (payload: { name: string; imageUrl: string; gridSize: number }) => {
+  const handleCreateMap = async (payload: { name: string; imageUrl: string; gridSizeX: number; gridSizeY: number }) => {
     if (!campaignId) return false;
     try {
       await dispatch(
@@ -44,7 +46,31 @@ export default function MapViewer() {
           campaignId,
           name: payload.name,
           imageUrl: payload.imageUrl,
-          gridSize: payload.gridSize,
+          gridSizeX: payload.gridSizeX,
+          gridSizeY: payload.gridSizeY,
+        })
+      ).unwrap();
+      return true;
+    } catch {
+      return false;
+    }
+  };
+
+  const handleUpdateGrid = async (payload: {
+    gridSizeX: number;
+    gridSizeY: number;
+    gridOffsetX: number;
+    gridOffsetY: number;
+  }) => {
+    if (!selectedMapId) return false;
+    try {
+      await dispatch(
+        updateMap({
+          mapId: selectedMapId,
+          gridSizeX: payload.gridSizeX,
+          gridSizeY: payload.gridSizeY,
+          gridOffsetX: payload.gridOffsetX,
+          gridOffsetY: payload.gridOffsetY,
         })
       ).unwrap();
       return true;
@@ -95,6 +121,7 @@ export default function MapViewer() {
         <div className="split">
           <CreateMapForm onCreateMap={handleCreateMap} />
           <CreateTokenForm onCreateToken={handleCreateToken} />
+          {map && <MapGridForm map={map} onUpdateGrid={handleUpdateGrid} />}
         </div>
       )}
 

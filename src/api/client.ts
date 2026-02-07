@@ -1,4 +1,4 @@
-const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:4000/api";
+export const API_BASE = import.meta.env.VITE_API_BASE ?? "http://localhost:4000/api";
 
 type UnauthorizedHandler = () => void;
 
@@ -37,6 +37,24 @@ export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}) {
   if (!res.ok) {
     const body = await res.json().catch(() => ({}));
     if (res.status === 401 && !skipUnauthorizedHandling) {
+      unauthorizedHandler?.();
+    }
+    throw new ApiError(String(body.error ?? "Request failed"), res.status, body);
+  }
+
+  return res.json() as Promise<T>;
+}
+
+export async function apiUpload<T>(path: string, formData: FormData) {
+  const res = await fetch(`${API_BASE}${path}`, {
+    method: "POST",
+    credentials: "include",
+    body: formData,
+  });
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    if (res.status === 401) {
       unauthorizedHandler?.();
     }
     throw new ApiError(String(body.error ?? "Request failed"), res.status, body);

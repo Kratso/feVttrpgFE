@@ -8,6 +8,10 @@ import CampaignDashboard from "./pages/CampaignDashboard";
 import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
 import MapViewer from "./features/maps/MapViewer";
+import MapCreator from "./pages/MapCreator";
+import MapEditor from "./pages/MapEditor";
+import Tilesets from "./pages/Tilesets";
+import TilesetViewer from "./pages/TilesetViewer";
 import ClassViewer from "./pages/ClassViewer";
 import ItemViewer from "./pages/ItemViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
@@ -182,7 +186,55 @@ function App() {
           path="/campaigns/:campaignId/maps"
           element={
             <RequireAuth>
+              <Navigate to="../maps/view" replace />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/maps/view"
+          element={
+            <RequireAuth>
               <MapViewer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/maps/create"
+          element={
+            <RequireAuth>
+              <MapCreator />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/maps/edit/:mapId"
+          element={
+            <RequireAuth>
+              <MapEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/maps/edit"
+          element={
+            <RequireAuth>
+              <MapEditor />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/tilesets"
+          element={
+            <RequireAuth>
+              <Tilesets />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/tilesets/view"
+          element={
+            <RequireAuth>
+              <TilesetViewer />
             </RequireAuth>
           }
         />

@@ -37,17 +37,58 @@ export const fetchTokens = createAsyncThunk("maps/fetchTokens", async (mapId: st
 
 export const createMap = createAsyncThunk(
   "maps/create",
-  async (payload: { campaignId: string; name: string; imageUrl: string; gridSize: number }) => {
+  async (payload: {
+    campaignId: string;
+    name: string;
+    imageUrl?: string | null;
+    tileCountX?: number;
+    tileCountY?: number;
+    tileGrid?: Array<Array<string | null>> | null;
+    gridSizeX: number;
+    gridSizeY: number;
+  }) => {
     await apiFetch(`/campaigns/${payload.campaignId}/maps`, {
       method: "POST",
       body: JSON.stringify({
         name: payload.name,
-        imageUrl: payload.imageUrl,
-        gridSize: payload.gridSize,
+        imageUrl: payload.imageUrl ?? undefined,
+        tileCountX: payload.tileCountX,
+        tileCountY: payload.tileCountY,
+        tileGrid: payload.tileGrid ?? undefined,
+        gridSizeX: payload.gridSizeX,
+        gridSizeY: payload.gridSizeY,
       }),
     });
     const data = await apiFetch<{ maps: MapInfo[] }>(`/campaigns/${payload.campaignId}/maps`);
     return data.maps;
+  }
+);
+
+export const updateMap = createAsyncThunk(
+  "maps/update",
+  async (payload: {
+    mapId: string;
+    gridSizeX?: number;
+    gridSizeY?: number;
+    gridOffsetX?: number;
+    gridOffsetY?: number;
+    tileCountX?: number;
+    tileCountY?: number;
+    tileGrid?: Array<Array<string | null>> | null;
+  }) => {
+    const data = await apiFetch<{ map: MapInfo }>(`/maps/${payload.mapId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        gridSizeX: payload.gridSizeX,
+        gridSizeY: payload.gridSizeY,
+        gridOffsetX: payload.gridOffsetX,
+        gridOffsetY: payload.gridOffsetY,
+        tileCountX: payload.tileCountX,
+        tileCountY: payload.tileCountY,
+        tileGrid: payload.tileGrid ?? undefined,
+      }),
+    });
+    return data.map;
   }
 );
 
@@ -109,6 +150,10 @@ const mapSlice = createSlice({
       })
       .addCase(createToken.fulfilled, (state, action) => {
         state.tokens = action.payload;
+      })
+      .addCase(updateMap.fulfilled, (state, action) => {
+        state.map = action.payload;
+        state.maps = state.maps.map((map) => (map.id === action.payload.id ? action.payload : map));
       });
   },
 });

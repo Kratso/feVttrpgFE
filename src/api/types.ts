@@ -62,10 +62,14 @@ export type GameClass = {
 export type MapInfo = {
   id: string;
   name: string;
-  imageUrl: string;
-  gridSize: number;
+  imageUrl?: string | null;
+  gridSizeX: number;
+  gridSizeY: number;
   gridOffsetX: number;
   gridOffsetY: number;
+  tileCountX?: number;
+  tileCountY?: number;
+  tileGrid?: Array<Array<string | null>> | null;
 };
 
 export type Token = {
@@ -74,6 +78,34 @@ export type Token = {
   x: number;
   y: number;
   color: string;
+};
+
+export type Tile = {
+  id: string;
+  tileSetId: string;
+  index: number;
+  imageUrl: string;
+};
+
+export type TileSet = {
+  id: string;
+  name: string;
+  imageUrl: string;
+  tileSizeX: number;
+  tileSizeY: number;
+  columns: number;
+  rows: number;
+  tiles: Tile[];
+};
+
+export type TilePreset = {
+  id: string;
+  name: string;
+  tileCountX: number;
+  tileCountY: number;
+  tileGrid: Array<Array<string | null>>;
+  campaignId: string;
+  createdAt: string;
 };
 
 export type Item = {

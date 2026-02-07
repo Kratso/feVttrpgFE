@@ -37,9 +37,31 @@ export default function CampaignDashboard() {
           <h3>Character viewer</h3>
           <p className="muted">Browse character sheets in a stat-viewer layout.</p>
         </CardLink>
-        <CardLink to={`/campaigns/${campaignId}/maps`}>
+        <CardLink to={`/campaigns/${campaignId}/maps/view`}>
           <h3>Map viewer</h3>
           <p className="muted">Grid overlay with tokens and realtime updates.</p>
+        </CardLink>
+        {role === "DM" && (
+          <CardLink to={`/campaigns/${campaignId}/maps/create`}>
+            <h3>Map creator</h3>
+            <p className="muted">Build new maps using tiles.</p>
+          </CardLink>
+        )}
+        {role === "DM" && (
+          <CardLink to={`/campaigns/${campaignId}/maps/edit`}>
+            <h3>Map editor</h3>
+            <p className="muted">Edit existing maps with a map selector.</p>
+          </CardLink>
+        )}
+        {role === "DM" && (
+          <CardLink to={`/campaigns/${campaignId}/tilesets`}>
+            <h3>Tileset uploader</h3>
+            <p className="muted">Upload tilesets and review tiles.</p>
+          </CardLink>
+        )}
+        <CardLink to={`/campaigns/${campaignId}/tilesets/view`}>
+          <h3>Tileset viewer</h3>
+          <p className="muted">Browse all tilesets and tiles.</p>
         </CardLink>
         <CardLink to={`/campaigns/${campaignId}/items`}>
           <h3>Item viewer</h3>

@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import MapViewer from "./MapViewer";
 import { setMockState, mockDispatch } from "../../test/mockStore";
 
@@ -16,11 +16,35 @@ describe("MapViewer", () => {
     setMockState({
       maps: {
         maps: [
-          { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
-          { id: "map-2", name: "Other Map", imageUrl: "other.png", gridSize: 40, gridOffsetX: 5, gridOffsetY: 5 },
+          {
+            id: "map-1",
+            name: "Test Map",
+            imageUrl: "test.png",
+            gridSizeX: 50,
+            gridSizeY: 50,
+            gridOffsetX: 0,
+            gridOffsetY: 0,
+          },
+          {
+            id: "map-2",
+            name: "Other Map",
+            imageUrl: "other.png",
+            gridSizeX: 40,
+            gridSizeY: 40,
+            gridOffsetX: 5,
+            gridOffsetY: 5,
+          },
         ],
         selectedMapId: "map-1",
-        map: { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+        map: {
+          id: "map-1",
+          name: "Test Map",
+          imageUrl: "test.png",
+          gridSizeX: 50,
+          gridSizeY: 50,
+          gridOffsetX: 0,
+          gridOffsetY: 0,
+        },
         tokens: [
           { id: "token-1", label: "A", x: 1, y: 2, color: "#f43f5e" },
           { id: "token-2", label: "B", x: 0, y: 0, color: "#22d3ee" },
@@ -66,9 +90,20 @@ describe("MapViewer", () => {
 
   it("dispatches createMap when submitting create map form", () => {
     render(<MapViewer />);
-    fireEvent.change(screen.getByLabelText("Map name"), { target: { value: "New Map" } });
-    fireEvent.change(screen.getByLabelText("Image URL"), { target: { value: "url.png" } });
-    fireEvent.change(screen.getByLabelText("Grid size (px)"), { target: { value: 32 } });
+    const createMapForm = screen.getByRole("heading", { name: /create map/i }).closest("form");
+    if (!createMapForm) {
+      throw new Error("Create map form not found");
+    }
+    const form = within(createMapForm);
+
+    fireEvent.change(form.getByLabelText("Map name"), { target: { value: "New Map" } });
+    fireEvent.change(form.getByLabelText("Image URL"), { target: { value: "url.png" } });
+    fireEvent.change(form.getByLabelText("Grid width (px)", { selector: "input" }), {
+      target: { value: 32 },
+    });
+    fireEvent.change(form.getByLabelText("Grid height (px)", { selector: "input" }), {
+      target: { value: 30 },
+    });
     fireEvent.click(screen.getByRole("button", { name: /add map/i }));
     const calls = mockDispatch.mock.calls;
     expect(calls.some(([arg]) => typeof arg === "function")).toBe(true);
@@ -91,10 +126,26 @@ describe("MapViewer", () => {
     setMockState({
       maps: {
         maps: [
-          { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+          {
+            id: "map-1",
+            name: "Test Map",
+            imageUrl: "test.png",
+            gridSizeX: 50,
+            gridSizeY: 50,
+            gridOffsetX: 0,
+            gridOffsetY: 0,
+          },
         ],
         selectedMapId: "map-1",
-        map: { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+        map: {
+          id: "map-1",
+          name: "Test Map",
+          imageUrl: "test.png",
+          gridSizeX: 50,
+          gridSizeY: 50,
+          gridOffsetX: 0,
+          gridOffsetY: 0,
+        },
         tokens: [],
         loading: false,
         error: null,
@@ -110,10 +161,26 @@ describe("MapViewer", () => {
     setMockState({
       maps: {
         maps: [
-          { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+          {
+            id: "map-1",
+            name: "Test Map",
+            imageUrl: "test.png",
+            gridSizeX: 50,
+            gridSizeY: 50,
+            gridOffsetX: 0,
+            gridOffsetY: 0,
+          },
         ],
         selectedMapId: "map-1",
-        map: { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+        map: {
+          id: "map-1",
+          name: "Test Map",
+          imageUrl: "test.png",
+          gridSizeX: 50,
+          gridSizeY: 50,
+          gridOffsetX: 0,
+          gridOffsetY: 0,
+        },
         tokens: [],
         loading: false,
         error: "Something went wrong!",
@@ -134,10 +201,26 @@ describe("MapViewer", () => {
     setMockState({
       maps: {
         maps: [
-          { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+          {
+            id: "map-1",
+            name: "Test Map",
+            imageUrl: "test.png",
+            gridSizeX: 50,
+            gridSizeY: 50,
+            gridOffsetX: 0,
+            gridOffsetY: 0,
+          },
         ],
         selectedMapId: "map-1",
-        map: { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
+        map: {
+          id: "map-1",
+          name: "Test Map",
+          imageUrl: "test.png",
+          gridSizeX: 50,
+          gridSizeY: 50,
+          gridOffsetX: 0,
+          gridOffsetY: 0,
+        },
         tokens: [{ id: "token-1", label: "A", x: 1, y: 2, color: "#f43f5e" }],
         loading: false,
         error: null,

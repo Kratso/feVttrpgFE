@@ -7,7 +7,8 @@ import Button from "../../../components/ui/Button";
 type CreateMapPayload = {
   name: string;
   imageUrl: string;
-  gridSize: number;
+  gridSizeX: number;
+  gridSizeY: number;
 };
 
 type CreateMapFormProps = {
@@ -17,14 +18,16 @@ type CreateMapFormProps = {
 export default function CreateMapForm({ onCreateMap }: CreateMapFormProps) {
   const [newMapName, setNewMapName] = useState("");
   const [newMapUrl, setNewMapUrl] = useState("");
-  const [newGridSize, setNewGridSize] = useState(50);
+  const [newGridSizeX, setNewGridSizeX] = useState(50);
+  const [newGridSizeY, setNewGridSizeY] = useState(50);
 
   const onSubmit = async (event: FormEvent) => {
     event.preventDefault();
     const success = await onCreateMap({
       name: newMapName,
       imageUrl: newMapUrl,
-      gridSize: newGridSize,
+      gridSizeX: newGridSizeX,
+      gridSizeY: newGridSizeY,
     });
     if (success) {
       setNewMapName("");
@@ -41,14 +44,24 @@ export default function CreateMapForm({ onCreateMap }: CreateMapFormProps) {
       <Field label="Image URL">
         <TextInput value={newMapUrl} onChange={(e) => setNewMapUrl(e.target.value)} required />
       </Field>
-      <Field label="Grid size (px)">
-        <TextInput
-          type="number"
-          value={newGridSize}
-          onChange={(e) => setNewGridSize(Number(e.target.value))}
-          min={20}
-        />
-      </Field>
+      <div className="stats-grid">
+        <Field label="Grid width (px)">
+          <TextInput
+            type="number"
+            value={newGridSizeX}
+            onChange={(e) => setNewGridSizeX(Number(e.target.value))}
+            min={10}
+          />
+        </Field>
+        <Field label="Grid height (px)">
+          <TextInput
+            type="number"
+            value={newGridSizeY}
+            onChange={(e) => setNewGridSizeY(Number(e.target.value))}
+            min={10}
+          />
+        </Field>
+      </div>
       <Button type="submit" variant="primary">
         Add map
       </Button>
