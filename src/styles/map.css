@@ -10,6 +10,8 @@
 .map-image {
   width: 100%;
   display: block;
+  position: relative;
+  z-index: 0;
 }
 
 .grid-overlay {
@@ -19,10 +21,14 @@
     linear-gradient(to right, rgba(148, 163, 184, 0.35) 1px, transparent 1px),
     linear-gradient(to bottom, rgba(148, 163, 184, 0.35) 1px, transparent 1px);
   pointer-events: none;
+  z-index: 1;
 }
 
 .token {
   position: absolute;
+  top: 0;
+  left: 0;
+  z-index: 2;
   border-radius: 999px;
   display: grid;
   place-items: center;
