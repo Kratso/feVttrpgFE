@@ -11,9 +11,12 @@ import Field from "../components/ui/Field";
 import TextInput from "../components/ui/TextInput";
 import SelectInput from "../components/ui/SelectInput";
 import Button from "../components/ui/Button";
+import FloatingPanel from "../components/ui/FloatingPanel";
 import TilePalette from "../features/maps/components/TilePalette";
 import TileCanvas from "../features/maps/components/TileCanvas";
+import PresetPalette from "../features/maps/components/PresetPalette";
 import { buildGrid } from "../features/maps/utils/tileGrid";
+import { applyPresetAt } from "../features/maps/utils/presetBrush";
 
 const TILE_SIZE = 32;
 
@@ -22,7 +25,7 @@ export default function MapCreator() {
   const dispatch = useAppDispatch();
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
   const [presets, setPresets] = useState<TilePreset[]>([]);
-  const [presetId, setPresetId] = useState<string | null>(null);
+  const [activePresetId, setActivePresetId] = useState<string | null>(null);
   const [activeTileSetId, setActiveTileSetId] = useState<string | null>(null);
   const [mapName, setMapName] = useState("");
   const [tileCountX, setTileCountX] = useState(20);
@@ -32,6 +35,8 @@ export default function MapCreator() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const [painting, setPainting] = useState(false);
+  const [showTiles, setShowTiles] = useState(true);
+  const [showPresets, setShowPresets] = useState(false);
 
   const activeTileSet = useMemo(
     () => tileSets.find((entry) => entry.id === activeTileSetId) ?? null,
@@ -69,16 +74,16 @@ export default function MapCreator() {
     }
   }, [activeTileSet]);
 
-  useEffect(() => {
-    const preset = presets.find((entry) => entry.id === presetId);
-    if (!preset) return;
-    setTileCountX(preset.tileCountX);
-    setTileCountY(preset.tileCountY);
-    setTileGrid(preset.tileGrid);
-  }, [presetId, presets]);
+  const activePreset = useMemo(
+    () => presets.find((entry) => entry.id === activePresetId) ?? null,
+    [activePresetId, presets]
+  );
 
   const handlePaint = (row: number, col: number) => {
     setTileGrid((prev) => {
+      if (activePreset) {
+        return applyPresetAt(prev, activePreset.tileGrid, row, col);
+      }
       const next = prev.map((line) => [...line]);
       next[row][col] = selectedTileId;
       return next;
@@ -140,7 +145,7 @@ export default function MapCreator() {
           </SelectInput>
         </Field>
         <Field label="Preset">
-          <SelectInput value={presetId ?? ""} onChange={(event) => setPresetId(event.target.value || null)}>
+          <SelectInput value={activePresetId ?? ""} onChange={(event) => setActivePresetId(event.target.value || null)}>
             <option value="">No preset</option>
             {presets.map((preset) => (
               <option key={preset.id} value={preset.id}>
@@ -176,15 +181,33 @@ export default function MapCreator() {
 
       {activeTileSet && (
         <div style={{ display: "grid", gap: "1.25rem" }}>
-          <TilePalette
-            tileSets={compatibleTileSets}
-            activeTileSet={activeTileSet}
-            selectedTileId={selectedTileId}
-            onSelectTileSet={setActiveTileSetId}
-            onSelectTile={setSelectedTileId}
-            tileSize={TILE_SIZE}
-            description="Click a tileset tab, then paint tiles onto the grid."
-          />
+          <FloatingPanel side="left" title="Presets" isOpen={showPresets} onToggle={() => setShowPresets(!showPresets)}>
+            <PresetPalette
+              presets={presets}
+              tileSets={tileSets}
+              activePresetId={activePresetId}
+              onSelectPreset={(presetId) => {
+                setActivePresetId(presetId);
+                if (presetId) {
+                  setSelectedTileId(null);
+                }
+              }}
+            />
+          </FloatingPanel>
+          <FloatingPanel side="right" title="Tiles" size="wide" isOpen={showTiles} onToggle={() => setShowTiles(!showTiles)}>
+            <TilePalette
+              tileSets={compatibleTileSets}
+              activeTileSet={activeTileSet}
+              selectedTileId={selectedTileId}
+              onSelectTileSet={setActiveTileSetId}
+              onSelectTile={(tileId) => {
+                setSelectedTileId(tileId);
+                setActivePresetId(null);
+              }}
+              tileSize={TILE_SIZE}
+              description="Click a tileset tab, then paint tiles onto the grid."
+            />
+          </FloatingPanel>
           <TileCanvas
             tileGrid={tileGrid}
             tileSets={tileSets}

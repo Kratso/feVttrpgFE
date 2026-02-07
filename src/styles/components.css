@@ -177,3 +177,54 @@
   display: grid;
   gap: 0.6rem;
 }
+
+.floating-shell {
+  position: fixed;
+  top: 140px;
+  bottom: 40px;
+  width: 360px;
+  z-index: 40;
+  display: grid;
+  grid-template-rows: auto 1fr;
+  background: rgba(15, 23, 42, 0.95);
+  border: 1px solid rgba(148, 163, 184, 0.3);
+  box-shadow: 0 24px 50px rgba(8, 15, 30, 0.6);
+  padding: 1rem;
+}
+
+.floating-shell.wide {
+  width: 720px;
+}
+
+.floating-shell.left {
+  left: 1.5rem;
+}
+
+.floating-shell.right {
+  right: 1.5rem;
+}
+
+.floating-toggle {
+  position: fixed;
+  top: 180px;
+  z-index: 45;
+  width: 48px;
+  height: 120px;
+  border-radius: 0;
+  border: 1px solid rgba(148, 163, 184, 0.4);
+  background: rgba(15, 23, 42, 0.9);
+  color: #e2e8f0;
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  letter-spacing: 0.2em;
+  font-weight: 700;
+}
+
+.floating-toggle.left {
+  left: 0;
+}
+
+.floating-toggle.right {
+  right: 0;
+}
+
