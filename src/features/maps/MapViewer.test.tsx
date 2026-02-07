@@ -1,5 +1,5 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, within } from "@testing-library/react";
 import MapViewer from "./MapViewer";
 import { setMockState, mockDispatch } from "../../test/mockStore";
 
@@ -76,7 +76,7 @@ describe("MapViewer", () => {
 
   it("shows DM controls for creating token", () => {
     render(<MapViewer />);
-    expect(screen.getByRole("heading", { name: /create token/i })).toBeInTheDocument();
+    expect(screen.getByRole("button", { name: /add token/i })).toBeInTheDocument();
   });
 
   it("shows role in toolbar", () => {
@@ -93,11 +93,16 @@ describe("MapViewer", () => {
 
   it("can fill and submit create token form", () => {
     render(<MapViewer />);
+    fireEvent.click(screen.getByRole("button", { name: /add token/i }));
     fireEvent.change(screen.getByLabelText("Label"), { target: { value: "Z" } });
     fireEvent.change(screen.getByLabelText("X"), { target: { value: 3 } });
     fireEvent.change(screen.getByLabelText("Y"), { target: { value: 4 } });
     fireEvent.change(screen.getByLabelText("Color"), { target: { value: "#000000" } });
-    fireEvent.click(screen.getByRole("button", { name: /add token/i }));
+    const form = screen.getByRole("heading", { name: /create token/i }).closest("form");
+    if (!form) {
+      throw new Error("Create token form not found");
+    }
+    fireEvent.click(within(form).getByRole("button", { name: /add token/i }));
     expect(screen.getByLabelText("Label")).toHaveValue("Z");
     expect(screen.getByLabelText("X")).toHaveValue(3);
     expect(screen.getByLabelText("Y")).toHaveValue(4);
@@ -135,7 +140,7 @@ describe("MapViewer", () => {
       campaigns: { role: "PLAYER" },
     });
     render(<MapViewer />);
-    expect(screen.queryByRole("heading", { name: /create token/i })).not.toBeInTheDocument();
+    expect(screen.queryByRole("button", { name: /add token/i })).not.toBeInTheDocument();
   });
 
   it("shows error banner if error present", () => {

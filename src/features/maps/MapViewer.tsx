@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import type { TileSet, Token } from "../../api/types";
 import { apiFetch } from "../../api/client";
@@ -6,15 +6,15 @@ import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
   createToken as createTokenAction,
   selectMap,
-  updateMap,
   updateToken,
 } from "../../store/slices/mapSlice";
 import Panel from "../../components/ui/Panel";
 import ErrorBanner from "../../components/ui/ErrorBanner";
+import FloatingPanel from "../../components/ui/FloatingPanel";
 import MapToolbar from "./components/MapToolbar";
 import CreateTokenForm from "./components/CreateTokenForm";
-import MapGridForm from "./components/MapGridForm";
 import MapStage from "./components/MapStage";
+import TokenList, { type TokenVisibility } from "./components/TokenList";
 import { useMapBootstrap } from "./hooks/useMapBootstrap";
 import { useMapDetail } from "./hooks/useMapDetail";
 import { useMapSocket } from "./hooks/useMapSocket";
@@ -25,6 +25,10 @@ export default function MapViewer() {
   const { maps, selectedMapId, map, tokens, error } = useAppSelector((state) => state.maps);
   const { role } = useAppSelector((state) => state.campaigns);
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
+  const [showTokenForm, setShowTokenForm] = useState(false);
+  const [showTokenList, setShowTokenList] = useState(false);
+  const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
+  const [tokenVisibility, setTokenVisibility] = useState<Record<string, TokenVisibility>>({});
 
   useMapBootstrap(campaignId);
   useMapDetail(selectedMapId);
@@ -36,6 +40,22 @@ export default function MapViewer() {
       .catch(() => setTileSets([]));
   }, [campaignId]);
 
+  useEffect(() => {
+    setTokenVisibility((prev) => {
+      const next: Record<string, TokenVisibility> = {};
+      tokens.forEach((token) => {
+        next[token.id] = prev[token.id] ?? "PUBLIC";
+      });
+      return next;
+    });
+  }, [tokens]);
+
+  useEffect(() => {
+    if (selectedTokenId && !tokens.some((token) => token.id === selectedTokenId)) {
+      setSelectedTokenId(null);
+    }
+  }, [selectedTokenId, tokens]);
+
   const handleSocketTokenMoved = useCallback(
     (token: Token) => {
       dispatch(updateToken(token));
@@ -44,29 +64,6 @@ export default function MapViewer() {
   );
 
   const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved);
-
-  const handleUpdateGrid = async (payload: {
-    gridSizeX: number;
-    gridSizeY: number;
-    gridOffsetX: number;
-    gridOffsetY: number;
-  }) => {
-    if (!selectedMapId) return false;
-    try {
-      await dispatch(
-        updateMap({
-          mapId: selectedMapId,
-          gridSizeX: payload.gridSizeX,
-          gridSizeY: payload.gridSizeY,
-          gridOffsetX: payload.gridOffsetX,
-          gridOffsetY: payload.gridOffsetY,
-        })
-      ).unwrap();
-      return true;
-    } catch {
-      return false;
-    }
-  };
 
   const handleCreateToken = async (payload: { label: string; x: number; y: number; color: string }) => {
     if (!selectedMapId) return false;
@@ -95,6 +92,20 @@ export default function MapViewer() {
     socketRef.current?.emit("token:move", { mapId: map.id, tokenId, x, y });
   };
 
+  const visibleTokens = useMemo(() => {
+    return tokens.filter((token) => {
+      const visibility = tokenVisibility[token.id] ?? "PUBLIC";
+      if (visibility === "HIDDEN") return false;
+      if (visibility === "DM_ONLY" && role !== "DM") return false;
+      return true;
+    });
+  }, [tokens, tokenVisibility, role]);
+
+  const listTokens = useMemo(() => {
+    if (role === "DM") return tokens;
+    return visibleTokens;
+  }, [role, tokens, visibleTokens]);
+
   return (
     <Panel>
       <h1>Map viewer</h1>
@@ -107,14 +118,45 @@ export default function MapViewer() {
       />
 
       {role === "DM" && (
-        <div className="split">
+        <FloatingPanel
+          side="right"
+          title="Add token"
+          isOpen={showTokenForm}
+          onToggle={() => setShowTokenForm((open) => !open)}
+        >
           <CreateTokenForm onCreateToken={handleCreateToken} />
-          {map && <MapGridForm map={map} onUpdateGrid={handleUpdateGrid} />}
-        </div>
+        </FloatingPanel>
       )}
 
+      <FloatingPanel
+        side="left"
+        title="Tokens"
+        isOpen={showTokenList}
+        onToggle={() => setShowTokenList((open) => !open)}
+      >
+        <TokenList
+          tokens={listTokens}
+          role={role}
+          selectedTokenId={selectedTokenId}
+          visibilityById={tokenVisibility}
+          onSelect={setSelectedTokenId}
+          onVisibilityChange={(tokenId, visibility) =>
+            setTokenVisibility((prev) => ({ ...prev, [tokenId]: visibility }))
+          }
+        />
+      </FloatingPanel>
+
       {map && (
-        <MapStage map={map} tokens={tokens} role={role} onMoveToken={handleMoveToken} tileSets={tileSets} />
+        <div className="map-stage-scroll">
+          <MapStage
+            map={map}
+            tokens={visibleTokens}
+            role={role}
+            onMoveToken={handleMoveToken}
+            tileSets={tileSets}
+            selectedTokenId={selectedTokenId}
+          />
+        </div>
       )}
     </Panel>
   );

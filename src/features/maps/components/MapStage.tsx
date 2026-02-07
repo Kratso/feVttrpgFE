@@ -8,16 +8,26 @@ type MapStageProps = {
   role: "DM" | "PLAYER" | null;
   onMoveToken: (tokenId: string, x: number, y: number) => void;
   tileSets?: TileSet[];
+  selectedTokenId?: string | null;
 };
 
 const flattenTiles = (tileSets: TileSet[]) => tileSets.flatMap((entry) => entry.tiles);
 
-export default function MapStage({ map, tokens, role, onMoveToken, tileSets = [] }: MapStageProps) {
+export default function MapStage({
+  map,
+  tokens,
+  role,
+  onMoveToken,
+  tileSets = [],
+  selectedTokenId = null,
+}: MapStageProps) {
   const dragTokenId = useRef<string | null>(null);
   const gridSizeX = map.gridSizeX;
   const gridSizeY = map.gridSizeY;
   const tiles = useMemo(() => flattenTiles(tileSets), [tileSets]);
   const tileGrid = map.tileGrid as Array<Array<string | null>> | null;
+  const tileRows = tileGrid?.length ?? 0;
+  const tileCols = tileGrid?.[0]?.length ?? 0;
 
   const gridStyle = useMemo(() => {
     return {
@@ -49,8 +59,19 @@ export default function MapStage({ map, tokens, role, onMoveToken, tileSets = []
     onMoveToken(tokenId, x, y);
   };
 
+  const stageStyle =
+    tileRows > 0 && tileCols > 0
+      ? { width: `${tileCols * gridSizeX}px`, height: `${tileRows * gridSizeY}px` }
+      : undefined;
+
   return (
-    <div className="map-stage" onMouseMove={onMove} onMouseUp={endDrag} onMouseLeave={endDrag}>
+    <div
+      className="map-stage"
+      style={stageStyle}
+      onMouseMove={onMove}
+      onMouseUp={endDrag}
+      onMouseLeave={endDrag}
+    >
       {map.imageUrl && <img src={map.imageUrl} alt={map.name} className="map-image" />}
       {tileGrid && tileGrid.length > 0 && (
         <div
@@ -85,7 +106,7 @@ export default function MapStage({ map, tokens, role, onMoveToken, tileSets = []
       {tokens.map((token) => (
         <div
           key={token.id}
-          className="token"
+          className={`token ${selectedTokenId === token.id ? "selected" : ""}`.trim()}
           style={{
             transform: `translate(${map.gridOffsetX + token.x * gridSizeX}px, ${
               map.gridOffsetY + token.y * gridSizeY
