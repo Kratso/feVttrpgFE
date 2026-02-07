@@ -12,6 +12,7 @@ import MapCreator from "./pages/MapCreator";
 import MapEditor from "./pages/MapEditor";
 import Tilesets from "./pages/Tilesets";
 import TilesetViewer from "./pages/TilesetViewer";
+import PresetBuilder from "./pages/PresetBuilder";
 import ClassViewer from "./pages/ClassViewer";
 import ItemViewer from "./pages/ItemViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
@@ -235,6 +236,14 @@ function App() {
           element={
             <RequireAuth>
               <TilesetViewer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/presets"
+          element={
+            <RequireAuth>
+              <PresetBuilder />
             </RequireAuth>
           }
         />

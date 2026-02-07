@@ -59,6 +59,12 @@ export default function CampaignDashboard() {
             <p className="muted">Upload tilesets and review tiles.</p>
           </CardLink>
         )}
+        {role === "DM" && (
+          <CardLink to={`/campaigns/${campaignId}/presets`}>
+            <h3>Preset builder</h3>
+            <p className="muted">Create reusable tile presets.</p>
+          </CardLink>
+        )}
         <CardLink to={`/campaigns/${campaignId}/tilesets/view`}>
           <h3>Tileset viewer</h3>
           <p className="muted">Browse all tilesets and tiles.</p>

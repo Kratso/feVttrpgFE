@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import type { FormEvent } from "react";
-import type { TileSet } from "../api/types";
+import type { TilePreset, TileSet } from "../api/types";
 import { apiFetch } from "../api/client";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import { fetchMapDetail, fetchMaps, selectMap, updateMap } from "../store/slices/mapSlice";
@@ -23,6 +23,8 @@ export default function MapEditor() {
   const dispatch = useAppDispatch();
   const { maps, selectedMapId, error, loading, map } = useAppSelector((state) => state.maps);
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
+  const [presets, setPresets] = useState<TilePreset[]>([]);
+  const [presetId, setPresetId] = useState<string | null>(null);
   const [activeTileSetId, setActiveTileSetId] = useState<string | null>(null);
   const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [tileCountX, setTileCountX] = useState(20);
@@ -41,6 +43,13 @@ export default function MapEditor() {
     if (!campaignId) return;
     apiFetch<{ tileSets: TileSet[] }>(`/campaigns/${campaignId}/tilesets`)
       .then((data) => setTileSets(data.tileSets))
+      .catch((err: Error) => setLocalError(err.message));
+  }, [campaignId]);
+
+  useEffect(() => {
+    if (!campaignId) return;
+    apiFetch<{ presets: TilePreset[] }>(`/campaigns/${campaignId}/presets`)
+      .then((data) => setPresets(data.presets))
       .catch((err: Error) => setLocalError(err.message));
   }, [campaignId]);
 
@@ -83,6 +92,14 @@ export default function MapEditor() {
       setSelectedTileId(activeTileSet.tiles[0].id);
     }
   }, [activeTileSet]);
+
+  useEffect(() => {
+    const preset = presets.find((entry) => entry.id === presetId);
+    if (!preset) return;
+    setTileCountX(preset.tileCountX);
+    setTileCountY(preset.tileCountY);
+    setTileGrid(preset.tileGrid);
+  }, [presetId, presets]);
 
   useEffect(() => {
     setTileGrid((prev) => resizeGrid(prev, tileCountY, tileCountX));
@@ -152,6 +169,16 @@ export default function MapEditor() {
 
       {map && activeTileSet && (
         <form onSubmit={onSubmit} className="form">
+          <Field label="Preset">
+            <SelectInput value={presetId ?? ""} onChange={(event) => setPresetId(event.target.value || null)}>
+              <option value="">No preset</option>
+              {presets.map((preset) => (
+                <option key={preset.id} value={preset.id}>
+                  {preset.name}
+                </option>
+              ))}
+            </SelectInput>
+          </Field>
           <div className="stats-grid">
             <Field label="Tiles wide">
               <TextInput

@@ -12,6 +12,7 @@ const labels: Record<string, string> = {
   items: "Items",
   classes: "Classes",
   tilesets: "Tilesets",
+  presets: "Presets",
   login: "Login",
   register: "Register",
 };

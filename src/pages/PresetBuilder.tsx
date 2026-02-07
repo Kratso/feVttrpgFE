@@ -3,8 +3,6 @@ import { useParams } from "react-router-dom";
 import type { FormEvent } from "react";
 import type { TilePreset, TileSet } from "../api/types";
 import { apiFetch } from "../api/client";
-import { useAppDispatch } from "../store/hooks";
-import { createMap } from "../store/slices/mapSlice";
 import Panel from "../components/ui/Panel";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import Field from "../components/ui/Field";
@@ -13,37 +11,29 @@ import SelectInput from "../components/ui/SelectInput";
 import Button from "../components/ui/Button";
 import TilePalette from "../features/maps/components/TilePalette";
 import TileCanvas from "../features/maps/components/TileCanvas";
-import { buildGrid } from "../features/maps/utils/tileGrid";
+import { buildGrid, resizeGrid } from "../features/maps/utils/tileGrid";
 
 const TILE_SIZE = 32;
 
-export default function MapCreator() {
+export default function PresetBuilder() {
   const { campaignId } = useParams();
-  const dispatch = useAppDispatch();
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
   const [presets, setPresets] = useState<TilePreset[]>([]);
-  const [presetId, setPresetId] = useState<string | null>(null);
   const [activeTileSetId, setActiveTileSetId] = useState<string | null>(null);
-  const [mapName, setMapName] = useState("");
+  const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
+  const [presetId, setPresetId] = useState<string | null>(null);
+  const [presetName, setPresetName] = useState("");
   const [tileCountX, setTileCountX] = useState(20);
   const [tileCountY, setTileCountY] = useState(15);
-  const [selectedTileId, setSelectedTileId] = useState<string | null>(null);
   const [tileGrid, setTileGrid] = useState<Array<Array<string | null>>>(() => buildGrid(15, 20));
-  const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
   const [painting, setPainting] = useState(false);
 
   const activeTileSet = useMemo(
     () => tileSets.find((entry) => entry.id === activeTileSetId) ?? null,
     [activeTileSetId, tileSets]
   );
-
-  const compatibleTileSets = useMemo(() => {
-    if (!activeTileSet) return tileSets;
-    return tileSets.filter(
-      (entry) => entry.tileSizeX === activeTileSet.tileSizeX && entry.tileSizeY === activeTileSet.tileSizeY
-    );
-  }, [activeTileSet, tileSets]);
 
   useEffect(() => {
     if (!campaignId) return;
@@ -52,16 +42,22 @@ export default function MapCreator() {
       .catch((err: Error) => setError(err.message));
   }, [campaignId]);
 
-  useEffect(() => {
-    if (!campaignId) return;
-    apiFetch<{ presets: TilePreset[] }>(`/campaigns/${campaignId}/presets`)
+  const loadPresets = () => {
+    if (!campaignId) return Promise.resolve();
+    return apiFetch<{ presets: TilePreset[] }>(`/campaigns/${campaignId}/presets`)
       .then((data) => setPresets(data.presets))
       .catch((err: Error) => setError(err.message));
+  };
+
+  useEffect(() => {
+    loadPresets();
   }, [campaignId]);
 
   useEffect(() => {
-    setTileGrid(buildGrid(tileCountY, tileCountX));
-  }, [tileCountX, tileCountY]);
+    if (!activeTileSetId && tileSets.length > 0) {
+      setActiveTileSetId(tileSets[0].id);
+    }
+  }, [activeTileSetId, tileSets]);
 
   useEffect(() => {
     if (activeTileSet && activeTileSet.tiles.length > 0) {
@@ -70,14 +66,11 @@ export default function MapCreator() {
   }, [activeTileSet]);
 
   useEffect(() => {
-    const preset = presets.find((entry) => entry.id === presetId);
-    if (!preset) return;
-    setTileCountX(preset.tileCountX);
-    setTileCountY(preset.tileCountY);
-    setTileGrid(preset.tileGrid);
-  }, [presetId, presets]);
+    setTileGrid((prev) => resizeGrid(prev, tileCountY, tileCountX));
+  }, [tileCountX, tileCountY]);
 
   const handlePaint = (row: number, col: number) => {
+    if (!selectedTileId) return;
     setTileGrid((prev) => {
       const next = prev.map((line) => [...line]);
       next[row][col] = selectedTileId;
@@ -85,28 +78,75 @@ export default function MapCreator() {
     });
   };
 
-  const onSubmit = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!campaignId || !activeTileSet) {
-      setError("Select a tileset tab before creating a map");
+  const handleSelectPreset = (preset: TilePreset | null) => {
+    if (!preset) {
+      setPresetId(null);
+      setPresetName("");
+      setTileCountX(20);
+      setTileCountY(15);
+      setTileGrid(buildGrid(15, 20));
       return;
     }
+    setPresetId(preset.id);
+    setPresetName(preset.name);
+    setTileCountX(preset.tileCountX);
+    setTileCountY(preset.tileCountY);
+    setTileGrid(preset.tileGrid);
+  };
+
+  const onSubmit = async (event: FormEvent) => {
+    event.preventDefault();
+    if (!campaignId) return;
     setError(null);
     setSaving(true);
     try {
-      await dispatch(
-        createMap({
-          campaignId,
-          name: mapName,
+      await apiFetch(`/campaigns/${campaignId}/presets`, {
+        method: "POST",
+        body: JSON.stringify({
+          name: presetName,
           tileCountX,
           tileCountY,
           tileGrid,
-          gridSizeX: activeTileSet.tileSizeX,
-          gridSizeY: activeTileSet.tileSizeY,
-        })
-      ).unwrap();
-      setMapName("");
-      setTileGrid(buildGrid(tileCountY, tileCountX));
+        }),
+      });
+      await loadPresets();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onUpdate = async () => {
+    if (!presetId) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await apiFetch(`/presets/${presetId}`, {
+        method: "PUT",
+        body: JSON.stringify({
+          name: presetName,
+          tileCountX,
+          tileCountY,
+          tileGrid,
+        }),
+      });
+      await loadPresets();
+    } catch (err) {
+      setError((err as Error).message);
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  const onDelete = async () => {
+    if (!presetId) return;
+    setError(null);
+    setSaving(true);
+    try {
+      await apiFetch(`/presets/${presetId}`, { method: "DELETE" });
+      await loadPresets();
+      handleSelectPreset(null);
     } catch (err) {
       setError((err as Error).message);
     } finally {
@@ -116,38 +156,28 @@ export default function MapCreator() {
 
   return (
     <Panel>
-      <h1>Map creator</h1>
-      <p>Create new tile-based maps here. (DM only)</p>
+      <h1>Preset builder</h1>
+      <p>Create reusable tile presets for map creation and editing.</p>
       <ErrorBanner message={error} />
 
       <form onSubmit={onSubmit} className="form">
-        <Field label="Map name">
-          <TextInput value={mapName} onChange={(event) => setMapName(event.target.value)} required />
-        </Field>
-        <Field label="Tileset">
-          <SelectInput
-            value={activeTileSetId ?? ""}
-            onChange={(event) => setActiveTileSetId(event.target.value || null)}
-          >
-            <option value="" disabled>
-              Select a tileset
-            </option>
-            {tileSets.map((tileSet) => (
-              <option key={tileSet.id} value={tileSet.id}>
-                {tileSet.name}
-              </option>
-            ))}
-          </SelectInput>
-        </Field>
         <Field label="Preset">
-          <SelectInput value={presetId ?? ""} onChange={(event) => setPresetId(event.target.value || null)}>
-            <option value="">No preset</option>
+          <SelectInput
+            value={presetId ?? ""}
+            onChange={(event) =>
+              handleSelectPreset(presets.find((preset) => preset.id === event.target.value) ?? null)
+            }
+          >
+            <option value="">New preset</option>
             {presets.map((preset) => (
               <option key={preset.id} value={preset.id}>
                 {preset.name}
               </option>
             ))}
           </SelectInput>
+        </Field>
+        <Field label="Preset name">
+          <TextInput value={presetName} onChange={(event) => setPresetName(event.target.value)} required />
         </Field>
         <div className="stats-grid">
           <Field label="Tiles wide">
@@ -169,21 +199,28 @@ export default function MapCreator() {
             />
           </Field>
         </div>
-        <Button type="submit" variant="primary" disabled={saving || !activeTileSet}>
-          {saving ? "Saving..." : "Create map"}
-        </Button>
+        <div style={{ display: "flex", gap: "0.75rem", flexWrap: "wrap" }}>
+          <Button type="submit" variant="primary" disabled={saving}>
+            {saving ? "Saving..." : "Save preset"}
+          </Button>
+          <Button type="button" variant="ghost" disabled={!presetId || saving} onClick={onUpdate}>
+            Update preset
+          </Button>
+          <Button type="button" variant="ghost" disabled={!presetId || saving} onClick={onDelete}>
+            Delete preset
+          </Button>
+        </div>
       </form>
 
       {activeTileSet && (
-        <div style={{ display: "grid", gap: "1.25rem" }}>
+        <div style={{ display: "grid", gap: "1.25rem", marginTop: "1.5rem" }}>
           <TilePalette
-            tileSets={compatibleTileSets}
+            tileSets={tileSets}
             activeTileSet={activeTileSet}
             selectedTileId={selectedTileId}
             onSelectTileSet={setActiveTileSetId}
             onSelectTile={setSelectedTileId}
             tileSize={TILE_SIZE}
-            description="Click a tileset tab, then paint tiles onto the grid."
           />
           <TileCanvas
             tileGrid={tileGrid}
