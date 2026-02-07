@@ -11,9 +11,10 @@ import MapViewer from "./features/maps/MapViewer";
 import ClassViewer from "./pages/ClassViewer";
 import ItemViewer from "./pages/ItemViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
-import { fetchMe, logout } from "./store/slices/authSlice";
+import { fetchMe, logout, sessionExpired } from "./store/slices/authSlice";
 import Button from "./components/ui/Button";
 import Breadcrumbs from "./components/ui/Breadcrumbs";
+import { setUnauthorizedHandler } from "./api/client";
 
 function RequireAuth({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAppSelector((state) => state.auth);
@@ -91,9 +92,15 @@ function Layout({ children }: { children: React.ReactNode }) {
 
 function App() {
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
   useEffect(() => {
+    setUnauthorizedHandler(() => {
+      dispatch(sessionExpired());
+      navigate("/login", { replace: true });
+    });
     dispatch(fetchMe());
-  }, [dispatch]);
+    return () => setUnauthorizedHandler(null);
+  }, [dispatch, navigate]);
 
   return (
     <Layout>

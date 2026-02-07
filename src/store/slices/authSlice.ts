@@ -24,6 +24,7 @@ export const login = createAsyncThunk(
   async (payload: { email: string; password: string }) => {
     await apiFetch("/auth/login", {
       method: "POST",
+      skipUnauthorizedHandling: true,
       body: JSON.stringify(payload),
     });
     const data = await apiFetch<{ user: User | null }>("/auth/me");
@@ -36,6 +37,7 @@ export const register = createAsyncThunk(
   async (payload: { email: string; password: string; displayName: string }) => {
     await apiFetch("/auth/register", {
       method: "POST",
+      skipUnauthorizedHandling: true,
       body: JSON.stringify(payload),
     });
     const data = await apiFetch<{ user: User | null }>("/auth/me");
@@ -51,7 +53,13 @@ export const logout = createAsyncThunk("auth/logout", async () => {
 const authSlice = createSlice({
   name: "auth",
   initialState,
-  reducers: {},
+  reducers: {
+    sessionExpired: (state) => {
+      state.user = null;
+      state.loading = false;
+      state.error = null;
+    },
+  },
   extraReducers: (builder) => {
     builder
       .addCase(fetchMe.pending, (state) => {
@@ -87,4 +95,5 @@ const authSlice = createSlice({
   },
 });
 
+export const { sessionExpired } = authSlice.actions;
 export default authSlice.reducer;
