@@ -75,3 +75,25 @@ export type Token = {
   y: number;
   color: string;
 };
+
+export type Item = {
+  id: string;
+  name: string;
+  type: string;
+  category: "ITEM" | "WEAPON";
+  damageType?: "PHYSICAL" | "MAGICAL" | null;
+  weaponRank?: string | null;
+  might?: number | null;
+  hit?: number | null;
+  crit?: number | null;
+  weight?: number | null;
+  minRange?: number | null;
+  maxRange?: number | null;
+  rangeFormula?: string | null;
+  weaponExp?: number | null;
+  effectiveness?: Record<string, unknown> | null;
+  bonus?: Record<string, unknown> | null;
+  uses?: number | null;
+  price?: number | null;
+  description?: string | null;
+};

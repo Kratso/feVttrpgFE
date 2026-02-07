@@ -146,3 +146,34 @@
 .class-tree > li {
   margin: 0.35rem 0;
 }
+
+.item-selectors {
+  display: grid;
+  gap: 1rem;
+}
+
+.item-detail {
+  display: grid;
+  gap: 1rem;
+}
+
+.item-layout-stacked {
+  display: grid;
+  gap: 1.5rem;
+}
+
+.item-detail-header {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.item-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.item-section {
+  display: grid;
+  gap: 0.6rem;
+}

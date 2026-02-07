@@ -9,6 +9,7 @@ import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
 import MapViewer from "./pages/MapViewer";
 import ClassViewer from "./pages/ClassViewer";
+import ItemViewer from "./pages/ItemViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { fetchMe, logout } from "./store/slices/authSlice";
 import Button from "./components/ui/Button";
@@ -159,6 +160,14 @@ function App() {
           element={
             <RequireAuth>
               <ClassViewer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/items"
+          element={
+            <RequireAuth>
+              <ItemViewer layout="stacked" />
             </RequireAuth>
           }
         />
