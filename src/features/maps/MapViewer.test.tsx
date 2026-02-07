@@ -1,7 +1,11 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
-import { fireEvent, render, screen, within } from "@testing-library/react";
+import { fireEvent, render, screen } from "@testing-library/react";
 import MapViewer from "./MapViewer";
 import { setMockState, mockDispatch } from "../../test/mockStore";
+
+vi.mock("../../api/client", () => ({
+  apiFetch: vi.fn().mockResolvedValue({ tileSets: [] }),
+}));
 
 function mockStoreFactory() {
   return import("../../test/mockStore").then((mockStore) => ({
@@ -70,9 +74,8 @@ describe("MapViewer", () => {
     expect(screen.getByText("B")).toBeInTheDocument();
   });
 
-  it("shows DM controls for creating map and token", () => {
+  it("shows DM controls for creating token", () => {
     render(<MapViewer />);
-    expect(screen.getByRole("heading", { name: /create map/i })).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: /create token/i })).toBeInTheDocument();
   });
 
@@ -86,27 +89,6 @@ describe("MapViewer", () => {
     const select = screen.getByRole("combobox");
     fireEvent.change(select, { target: { value: "map-2" } });
     expect(mockDispatch).toHaveBeenCalledWith({ type: "maps/selectMap", payload: "map-2" });
-  });
-
-  it("dispatches createMap when submitting create map form", () => {
-    render(<MapViewer />);
-    const createMapForm = screen.getByRole("heading", { name: /create map/i }).closest("form");
-    if (!createMapForm) {
-      throw new Error("Create map form not found");
-    }
-    const form = within(createMapForm);
-
-    fireEvent.change(form.getByLabelText("Map name"), { target: { value: "New Map" } });
-    fireEvent.change(form.getByLabelText("Image URL"), { target: { value: "url.png" } });
-    fireEvent.change(form.getByLabelText("Grid width (px)", { selector: "input" }), {
-      target: { value: 32 },
-    });
-    fireEvent.change(form.getByLabelText("Grid height (px)", { selector: "input" }), {
-      target: { value: 30 },
-    });
-    fireEvent.click(screen.getByRole("button", { name: /add map/i }));
-    const calls = mockDispatch.mock.calls;
-    expect(calls.some(([arg]) => typeof arg === "function")).toBe(true);
   });
 
   it("can fill and submit create token form", () => {
@@ -153,7 +135,6 @@ describe("MapViewer", () => {
       campaigns: { role: "PLAYER" },
     });
     render(<MapViewer />);
-    expect(screen.queryByRole("heading", { name: /create map/i })).not.toBeInTheDocument();
     expect(screen.queryByRole("heading", { name: /create token/i })).not.toBeInTheDocument();
   });
 

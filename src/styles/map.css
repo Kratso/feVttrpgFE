@@ -24,6 +24,17 @@
   z-index: 1;
 }
 
+.tile-layer {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  z-index: 0;
+}
+
+.tile-cell {
+  background: transparent;
+}
+
 .token {
   position: absolute;
   top: 0;

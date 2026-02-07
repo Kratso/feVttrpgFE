@@ -1,18 +1,23 @@
 import { useMemo, useRef } from "react";
 import type { CSSProperties, MouseEvent } from "react";
-import type { MapInfo, Token } from "../../../api/types";
+import type { MapInfo, TileSet, Token } from "../../../api/types";
 
 type MapStageProps = {
   map: MapInfo;
   tokens: Token[];
   role: "DM" | "PLAYER" | null;
   onMoveToken: (tokenId: string, x: number, y: number) => void;
+  tileSets?: TileSet[];
 };
 
-export default function MapStage({ map, tokens, role, onMoveToken }: MapStageProps) {
+const flattenTiles = (tileSets: TileSet[]) => tileSets.flatMap((entry) => entry.tiles);
+
+export default function MapStage({ map, tokens, role, onMoveToken, tileSets = [] }: MapStageProps) {
   const dragTokenId = useRef<string | null>(null);
   const gridSizeX = map.gridSizeX;
   const gridSizeY = map.gridSizeY;
+  const tiles = useMemo(() => flattenTiles(tileSets), [tileSets]);
+  const tileGrid = map.tileGrid as Array<Array<string | null>> | null;
 
   const gridStyle = useMemo(() => {
     return {
@@ -47,6 +52,35 @@ export default function MapStage({ map, tokens, role, onMoveToken }: MapStagePro
   return (
     <div className="map-stage" onMouseMove={onMove} onMouseUp={endDrag} onMouseLeave={endDrag}>
       {map.imageUrl && <img src={map.imageUrl} alt={map.name} className="map-image" />}
+      {tileGrid && tileGrid.length > 0 && (
+        <div
+          className="tile-layer"
+          style={{
+            gridTemplateColumns: `repeat(${tileGrid[0].length}, ${gridSizeX}px)`,
+            gridAutoRows: `${gridSizeY}px`,
+          }}
+        >
+          {tileGrid.map((row, rowIndex) =>
+            row.map((tileId, colIndex) => {
+              const tile = tiles.find((entry) => entry.id === tileId) ?? null;
+              return (
+                <div
+                  key={`${rowIndex}-${colIndex}`}
+                  className="tile-cell"
+                  style={{
+                    width: `${gridSizeX}px`,
+                    height: `${gridSizeY}px`,
+                    backgroundImage: tile ? `url(${tile.imageUrl})` : "none",
+                    backgroundSize: "100% 100%",
+                    backgroundRepeat: "no-repeat",
+                    backgroundPosition: "center",
+                  }}
+                />
+              );
+            })
+          )}
+        </div>
+      )}
       <div className="grid-overlay" style={gridStyle} />
       {tokens.map((token) => (
         <div

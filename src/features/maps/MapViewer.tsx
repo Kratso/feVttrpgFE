@@ -1,9 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { Token } from "../../api/types";
+import type { TileSet, Token } from "../../api/types";
+import { apiFetch } from "../../api/client";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
-  createMap as createMapAction,
   createToken as createTokenAction,
   selectMap,
   updateMap,
@@ -12,7 +12,6 @@ import {
 import Panel from "../../components/ui/Panel";
 import ErrorBanner from "../../components/ui/ErrorBanner";
 import MapToolbar from "./components/MapToolbar";
-import CreateMapForm from "./components/CreateMapForm";
 import CreateTokenForm from "./components/CreateTokenForm";
 import MapGridForm from "./components/MapGridForm";
 import MapStage from "./components/MapStage";
@@ -25,9 +24,17 @@ export default function MapViewer() {
   const dispatch = useAppDispatch();
   const { maps, selectedMapId, map, tokens, error } = useAppSelector((state) => state.maps);
   const { role } = useAppSelector((state) => state.campaigns);
+  const [tileSets, setTileSets] = useState<TileSet[]>([]);
 
   useMapBootstrap(campaignId);
   useMapDetail(selectedMapId);
+
+  useEffect(() => {
+    if (!campaignId) return;
+    apiFetch<{ tileSets: TileSet[] }>(`/campaigns/${campaignId}/tilesets`)
+      .then((data) => setTileSets(data.tileSets))
+      .catch(() => setTileSets([]));
+  }, [campaignId]);
 
   const handleSocketTokenMoved = useCallback(
     (token: Token) => {
@@ -37,24 +44,6 @@ export default function MapViewer() {
   );
 
   const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved);
-
-  const handleCreateMap = async (payload: { name: string; imageUrl: string; gridSizeX: number; gridSizeY: number }) => {
-    if (!campaignId) return false;
-    try {
-      await dispatch(
-        createMapAction({
-          campaignId,
-          name: payload.name,
-          imageUrl: payload.imageUrl,
-          gridSizeX: payload.gridSizeX,
-          gridSizeY: payload.gridSizeY,
-        })
-      ).unwrap();
-      return true;
-    } catch {
-      return false;
-    }
-  };
 
   const handleUpdateGrid = async (payload: {
     gridSizeX: number;
@@ -119,13 +108,14 @@ export default function MapViewer() {
 
       {role === "DM" && (
         <div className="split">
-          <CreateMapForm onCreateMap={handleCreateMap} />
           <CreateTokenForm onCreateToken={handleCreateToken} />
           {map && <MapGridForm map={map} onUpdateGrid={handleUpdateGrid} />}
         </div>
       )}
 
-      {map && <MapStage map={map} tokens={tokens} role={role} onMoveToken={handleMoveToken} />}
+      {map && (
+        <MapStage map={map} tokens={tokens} role={role} onMoveToken={handleMoveToken} tileSets={tileSets} />
+      )}
     </Panel>
   );
 }
