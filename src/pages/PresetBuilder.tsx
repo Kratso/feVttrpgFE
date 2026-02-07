@@ -183,7 +183,7 @@ export default function PresetBuilder() {
           <Field label="Tiles wide">
             <TextInput
               type="number"
-              min={5}
+              min={1}
               max={200}
               value={tileCountX}
               onChange={(event) => setTileCountX(Number(event.target.value))}
@@ -192,7 +192,7 @@ export default function PresetBuilder() {
           <Field label="Tiles tall">
             <TextInput
               type="number"
-              min={5}
+              min={1}
               max={200}
               value={tileCountY}
               onChange={(event) => setTileCountY(Number(event.target.value))}
