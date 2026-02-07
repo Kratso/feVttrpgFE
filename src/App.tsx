@@ -7,7 +7,7 @@ import Campaigns from "./pages/Campaigns";
 import CampaignDashboard from "./pages/CampaignDashboard";
 import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
-import MapViewer from "./pages/MapViewer";
+import MapViewer from "./features/maps/MapViewer";
 import ClassViewer from "./pages/ClassViewer";
 import ItemViewer from "./pages/ItemViewer";
 import { useAppDispatch, useAppSelector } from "./store/hooks";

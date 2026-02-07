@@ -1,15 +1,15 @@
 import { describe, it, expect, vi, beforeEach } from "vitest";
 import { fireEvent, render, screen } from "@testing-library/react";
 import MapViewer from "./MapViewer";
-import { setMockState, mockDispatch } from "../test/mockStore";
+import { setMockState, mockDispatch } from "../../test/mockStore";
 
-vi.mock("../store/hooks", async () => {
-  const mockStore = await import("../test/mockStore");
-  return {
+function mockStoreFactory() {
+  return import("../../test/mockStore").then((mockStore) => ({
     useAppDispatch: () => mockStore.mockDispatch,
     useAppSelector: mockStore.useAppSelector,
-  };
-});
+  }));
+}
+vi.mock("../../store/hooks", mockStoreFactory);
 
 describe("MapViewer", () => {
   beforeEach(() => {
@@ -70,7 +70,6 @@ describe("MapViewer", () => {
     fireEvent.change(screen.getByLabelText("Image URL"), { target: { value: "url.png" } });
     fireEvent.change(screen.getByLabelText("Grid size (px)"), { target: { value: 32 } });
     fireEvent.click(screen.getByRole("button", { name: /add map/i }));
-    // Check that dispatch was called with a thunk (function)
     const calls = mockDispatch.mock.calls;
     expect(calls.some(([arg]) => typeof arg === "function")).toBe(true);
   });
@@ -82,7 +81,6 @@ describe("MapViewer", () => {
     fireEvent.change(screen.getByLabelText("Y"), { target: { value: 4 } });
     fireEvent.change(screen.getByLabelText("Color"), { target: { value: "#000000" } });
     fireEvent.click(screen.getByRole("button", { name: /add token/i }));
-    // No error thrown, form interaction works
     expect(screen.getByLabelText("Label")).toHaveValue("Z");
     expect(screen.getByLabelText("X")).toHaveValue(3);
     expect(screen.getByLabelText("Y")).toHaveValue(4);
@@ -130,7 +128,6 @@ describe("MapViewer", () => {
     render(<MapViewer />);
     const token = screen.getByText("A");
     fireEvent.mouseDown(token);
-    // No error thrown, drag logic is DM-only
   });
 
   it("does not start drag for non-DM", () => {
@@ -141,7 +138,7 @@ describe("MapViewer", () => {
         ],
         selectedMapId: "map-1",
         map: { id: "map-1", name: "Test Map", imageUrl: "test.png", gridSize: 50, gridOffsetX: 0, gridOffsetY: 0 },
-        tokens: [ { id: "token-1", label: "A", x: 1, y: 2, color: "#f43f5e" } ],
+        tokens: [{ id: "token-1", label: "A", x: 1, y: 2, color: "#f43f5e" }],
         loading: false,
         error: null,
       },
@@ -150,6 +147,5 @@ describe("MapViewer", () => {
     render(<MapViewer />);
     const token = screen.getByText("A");
     fireEvent.mouseDown(token);
-    // No error thrown, drag logic is skipped for non-DM
   });
 });
