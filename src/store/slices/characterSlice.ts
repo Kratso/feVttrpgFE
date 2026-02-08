@@ -162,7 +162,7 @@ const characterSlice = createSlice({
       })
       .addCase(createCharacter.fulfilled, (state, action) => {
         state.characters = action.payload;
-      });
+      })
       .addCase(addInventoryItem.fulfilled, (state, action) => {
         if (state.selectedCharacter?.id !== action.payload.characterId) return;
         const next = [...(state.selectedCharacter.inventory ?? []), action.payload.inventoryItem];
