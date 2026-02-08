@@ -1,7 +1,12 @@
 import { useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
-import { createCharacter as createCharacterAction, fetchCharacters } from "../store/slices/characterSlice";
+import {
+  createCharacter as createCharacterAction,
+  fetchCharacterDetail,
+  fetchCharacters,
+  updateCharacter as updateCharacterAction,
+} from "../store/slices/characterSlice";
 import { fetchCampaignMembers } from "../store/slices/campaignSlice";
 import { fetchClasses } from "../store/slices/classSlice";
 import Panel from "../components/ui/Panel";
@@ -9,7 +14,6 @@ import Field from "../components/ui/Field";
 import TextInput from "../components/ui/TextInput";
 import Button from "../components/ui/Button";
 import ErrorBanner from "../components/ui/ErrorBanner";
-import Card from "../components/ui/Card";
 import SelectInput from "../components/ui/SelectInput";
 import { getDisplayStats } from "../utils/character";
 
@@ -29,7 +33,7 @@ const defaultStats = {
 export default function CharacterAdmin() {
   const { campaignId } = useParams();
   const dispatch = useAppDispatch();
-  const { characters, error } = useAppSelector((state) => state.characters);
+  const { characters, selectedCharacter, error } = useAppSelector((state) => state.characters);
   const members = useAppSelector((state) => state.campaigns.members);
   const classes = useAppSelector((state) => state.classes.classes);
   const weaponTypes = ["sword", "lance", "axe", "bow", "anima", "light", "dark", "staff"];
@@ -41,6 +45,9 @@ export default function CharacterAdmin() {
   const [weaponSelections, setWeaponSelections] = useState<Record<string, boolean>>({});
   const [kind, setKind] = useState<"PLAYER" | "NPC" | "ENEMY">("PLAYER");
   const [ownerId, setOwnerId] = useState<string>("");
+  const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
+  const [autoLevel, setAutoLevel] = useState(false);
+  const [lastLevel, setLastLevel] = useState(1);
 
   const statKeys = useMemo(() => Object.keys(stats), [stats]);
   const classTreeOptions = useMemo(() => {
@@ -75,14 +82,64 @@ export default function CharacterAdmin() {
     dispatch(fetchClasses());
   }, [campaignId, dispatch]);
 
+  useEffect(() => {
+    if (!selectedCharacterId && characters.length > 0) {
+      setSelectedCharacterId(characters[0].id);
+    }
+  }, [characters, selectedCharacterId]);
+
+  useEffect(() => {
+    if (!selectedCharacterId) return;
+    dispatch(fetchCharacterDetail(selectedCharacterId));
+  }, [dispatch, selectedCharacterId]);
+
+  useEffect(() => {
+    if (!selectedCharacter) return;
+    setName(selectedCharacter.name ?? "");
+    setStats({ ...defaultStats, ...getDisplayStats(selectedCharacter.stats) });
+    setClassName(selectedCharacter.className ?? "");
+    setLevel(selectedCharacter.level ?? 1);
+    setLastLevel(selectedCharacter.level ?? 1);
+    setExp(selectedCharacter.exp ?? 0);
+    setKind(selectedCharacter.kind ?? "PLAYER");
+    setOwnerId(selectedCharacter.owner?.id ?? "");
+    setAutoLevel((selectedCharacter.kind ?? "PLAYER") !== "PLAYER");
+    const nextSelections: Record<string, boolean> = {};
+    weaponTypes.forEach((weapon) => {
+      nextSelections[weapon] = !!selectedCharacter.weaponSkills?.some((skill) => skill.weapon === weapon);
+    });
+    setWeaponSelections(nextSelections);
+  }, [selectedCharacter]);
+
+  const applyGrowths = (
+    baseStats: Record<string, number>,
+    growths: Record<string, number> | undefined,
+    delta: number
+  ) => {
+    if (!growths || delta === 0) return baseStats;
+    const next: Record<string, number> = { ...baseStats };
+    Object.keys(baseStats).forEach((key) => {
+      const growth = growths[key] ?? 0;
+      const adjustment = Math.round((delta * growth) / 100);
+      next[key] = (baseStats[key] ?? 0) + adjustment;
+    });
+    return next;
+  };
+
   const handleClassChange = (value: string) => {
     setClassName(value);
     const match = classes.find((gameClass) => gameClass.name === value);
     if (match?.baseStats && Object.keys(match.baseStats).length > 0) {
-      setStats((prev) => ({
-        ...prev,
-        ...match.baseStats,
-      }));
+      const baseStats = { ...defaultStats, ...match.baseStats };
+      if (autoLevel) {
+        const delta = level - 1;
+        setStats(applyGrowths(baseStats, match.growths ?? undefined, delta));
+      } else {
+        setStats((prev) => ({
+          ...prev,
+          ...match.baseStats,
+        }));
+      }
     }
     if (match?.weaponRanks) {
       const nextSelections: Record<string, boolean> = {};
@@ -92,6 +149,17 @@ export default function CharacterAdmin() {
       });
       setWeaponSelections(nextSelections);
     }
+  };
+
+  const handleLevelChange = (value: number) => {
+    const nextLevel = Number.isNaN(value) ? 1 : value;
+    if (autoLevel && className) {
+      const match = classes.find((gameClass) => gameClass.name === className);
+      const growths = match?.growths ?? undefined;
+      setStats((prev) => applyGrowths(prev, growths, nextLevel - lastLevel));
+    }
+    setLevel(nextLevel);
+    setLastLevel(nextLevel);
   };
 
   const onCreateCharacter = async (event: React.FormEvent) => {
@@ -129,9 +197,56 @@ export default function CharacterAdmin() {
       setKind("PLAYER");
       setOwnerId("");
       setWeaponSelections({});
+      setSelectedCharacterId(null);
     } catch {
       return;
     }
+  };
+
+  const onUpdateCharacter = async (event: React.FormEvent) => {
+    event.preventDefault();
+    if (!campaignId || !selectedCharacterId) return;
+    try {
+      const match = classes.find((gameClass) => gameClass.name === className);
+      const weaponSkills = weaponTypes
+        .filter((weapon) => weaponSelections[weapon])
+        .map((weapon) => ({
+          weapon,
+          rank: match?.weaponRanks?.[weapon] ?? "E",
+        }));
+
+      await dispatch(
+        updateCharacterAction({
+          characterId: selectedCharacterId,
+          name,
+          stats: {
+            baseStats: stats,
+          },
+          kind,
+          ownerId: kind === "PLAYER" ? ownerId || null : null,
+          className: className || null,
+          level,
+          exp,
+          weaponSkills,
+        })
+      ).unwrap();
+    } catch {
+      return;
+    }
+  };
+
+  const startNewCharacter = () => {
+    setSelectedCharacterId(null);
+    setName("");
+    setStats(defaultStats);
+    setClassName("");
+    setLevel(1);
+    setLastLevel(1);
+    setExp(0);
+    setKind("PLAYER");
+    setOwnerId("");
+    setWeaponSelections({});
+    setAutoLevel(false);
   };
 
   const playerMembers = members.filter((member) => member.role === "PLAYER");
@@ -139,7 +254,7 @@ export default function CharacterAdmin() {
   return (
     <Panel>
       <h1>Character admin</h1>
-      <form onSubmit={onCreateCharacter} className="form">
+      <form onSubmit={selectedCharacterId ? onUpdateCharacter : onCreateCharacter} className="form">
         <Field label="Character name">
           <TextInput value={name} onChange={(e) => setName(e.target.value)} required />
         </Field>
@@ -160,7 +275,7 @@ export default function CharacterAdmin() {
               min={1}
               max={20}
               value={level}
-              onChange={(e) => setLevel(Number(e.target.value))}
+              onChange={(e) => handleLevelChange(Number(e.target.value))}
             />
           </Field>
           <Field label="EXP">
@@ -172,6 +287,19 @@ export default function CharacterAdmin() {
               onChange={(e) => setExp(Number(e.target.value))}
             />
           </Field>
+        </div>
+        <div className="stats-grid">
+          <label className="switch-field">
+            <span className="switch-label">Auto level stats</span>
+            <div className="switch">
+              <input
+                type="checkbox"
+                checked={autoLevel}
+                onChange={(e) => setAutoLevel(e.target.checked)}
+              />
+              <span className="slider" />
+            </div>
+          </label>
         </div>
         <div className="stats-grid">
           {weaponTypes.map((weapon, idx) => (
@@ -191,7 +319,17 @@ export default function CharacterAdmin() {
           ))}
         </div>
         <Field label="Type">
-          <SelectInput value={kind} onChange={(e) => setKind(e.target.value as "PLAYER" | "NPC" | "ENEMY")}>
+          <SelectInput
+            value={kind}
+            onChange={(e) => {
+              const nextKind = e.target.value as "PLAYER" | "NPC" | "ENEMY";
+              setKind(nextKind);
+              setAutoLevel(nextKind !== "PLAYER");
+              if (nextKind !== "PLAYER") {
+                setOwnerId("");
+              }
+            }}
+          >
             <option value="PLAYER">Player</option>
             <option value="NPC">NPC</option>
             <option value="ENEMY">Enemy</option>
@@ -226,33 +364,34 @@ export default function CharacterAdmin() {
           ))}
         </div>
         <ErrorBanner message={error} />
-        <Button type="submit" variant="primary">
-          Create character
-        </Button>
+        <div className="character-admin-actions">
+          <Button type="submit" variant="primary">
+            {selectedCharacterId ? "Update character" : "Create character"}
+          </Button>
+          <Button type="button" variant="ghost" onClick={startNewCharacter}>
+            New character
+          </Button>
+        </div>
       </form>
 
-      <div className="grid">
+      <div className="character-list">
         {characters.map((character) => (
-          <Card key={character.id}>
-            <h3>{character.name}</h3>
-            <p className="muted">
-              {character.className ? `Class: ${character.className}` : "Class: Unassigned"} · Level {character.level ?? 1} · EXP {character.exp ?? 0}
-            </p>
-            {character.weaponSkills && character.weaponSkills.length > 0 && (
-              <p className="muted">
-                Weapon skills: {character.weaponSkills.map((skill: { weapon: string; rank: string }) => `${skill.weapon} ${skill.rank}`).join(", ")}
-              </p>
-            )}
-            <p className="muted">Owner: {character.owner?.displayName ?? "Unassigned"}</p>
-            <div className="stat-row">
-              {Object.entries(getDisplayStats(character.stats)).map(([label, value], idx) => (
-                <div key={`${label}-${idx}`} className="stat-chip">
-                  <span>{label}</span>
-                  <strong>{value}</strong>
-                </div>
-              ))}
+          <button
+            key={character.id}
+            type="button"
+            className={`character-row ${selectedCharacterId === character.id ? "selected" : ""}`.trim()}
+            onClick={() => setSelectedCharacterId(character.id)}
+          >
+            <div>
+              <strong>{character.name}</strong>
+              <span className="muted">{character.owner?.displayName ?? "Unassigned"}</span>
             </div>
-          </Card>
+            <div className="character-meta">
+              <span className="muted">{character.className ?? "Unassigned"}</span>
+              <span className="muted">Level {character.level ?? 1}</span>
+              <span className="muted">{character.kind}</span>
+            </div>
+          </button>
         ))}
       </div>
     </Panel>

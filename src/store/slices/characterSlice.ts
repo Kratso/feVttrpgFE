@@ -127,6 +127,41 @@ export const setEquippedWeapon = createAsyncThunk(
   }
 );
 
+export const updateCharacter = createAsyncThunk(
+  "characters/update",
+  async (payload: {
+    characterId: string;
+    name: string;
+    stats: Record<string, number> | {
+      baseStats?: Record<string, number>;
+      growths?: Record<string, number>;
+      bonusStats?: Record<string, number>;
+      weaponRanks?: Record<string, string>;
+    };
+    ownerId?: string | null;
+    kind: "PLAYER" | "NPC" | "ENEMY";
+    className?: string | null;
+    level: number;
+    exp: number;
+    weaponSkills?: Array<{ weapon: string; rank: string }>;
+  }) => {
+    const data = await apiFetch<{ character: Character }>(`/characters/${payload.characterId}`, {
+      method: "PUT",
+      body: JSON.stringify({
+        name: payload.name,
+        stats: payload.stats,
+        ownerId: payload.ownerId ?? null,
+        kind: payload.kind,
+        className: payload.className ?? null,
+        level: payload.level,
+        exp: payload.exp,
+        weaponSkills: payload.weaponSkills ?? [],
+      }),
+    });
+    return data.character;
+  }
+);
+
 const sortInventory = (items: CharacterItem[]) =>
   [...items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -196,6 +231,12 @@ const characterSlice = createSlice({
       .addCase(setEquippedWeapon.fulfilled, (state, action) => {
         if (state.selectedCharacter?.id !== action.payload.id) return;
         state.selectedCharacter.equippedWeaponItemId = action.payload.equippedWeaponItemId ?? null;
+      })
+      .addCase(updateCharacter.fulfilled, (state, action) => {
+        state.selectedCharacter = action.payload;
+        state.characters = state.characters.map((character) =>
+          character.id === action.payload.id ? { ...character, ...action.payload } : character
+        );
       });
   },
 });
