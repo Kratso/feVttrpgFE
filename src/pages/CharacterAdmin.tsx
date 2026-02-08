@@ -83,15 +83,23 @@ export default function CharacterAdmin() {
   }, [campaignId, dispatch]);
 
   useEffect(() => {
-    if (!selectedCharacterId && characters.length > 0) {
-      setSelectedCharacterId(characters[0].id);
-    }
-  }, [characters, selectedCharacterId]);
-
-  useEffect(() => {
     if (!selectedCharacterId) return;
     dispatch(fetchCharacterDetail(selectedCharacterId));
   }, [dispatch, selectedCharacterId]);
+
+  useEffect(() => {
+    if (selectedCharacterId !== null) return;
+    setName("");
+    setStats(defaultStats);
+    setClassName("");
+    setLevel(1);
+    setLastLevel(1);
+    setExp(0);
+    setKind("PLAYER");
+    setOwnerId("");
+    setWeaponSelections({});
+    setAutoLevel(false);
+  }, [selectedCharacterId]);
 
   useEffect(() => {
     if (!selectedCharacter) return;

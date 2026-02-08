@@ -25,11 +25,18 @@ export class ApiError extends Error {
 
 export async function apiFetch<T>(path: string, options: ApiFetchOptions = {}) {
   const { skipUnauthorizedHandling, ...fetchOptions } = options;
+  const hasBody = fetchOptions.body !== undefined;
+  const isFormData = typeof FormData !== "undefined" && fetchOptions.body instanceof FormData;
+  const headers: Record<string, string> = {
+    ...(fetchOptions.headers ?? {}),
+  };
+  if (hasBody && !isFormData) {
+    headers["Content-Type"] = "application/json";
+  }
   const res = await fetch(`${API_BASE}${path}`, {
     credentials: "include",
     headers: {
-      "Content-Type": "application/json",
-      ...(fetchOptions.headers ?? {}),
+      ...headers,
     },
     ...fetchOptions,
   });
