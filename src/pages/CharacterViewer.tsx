@@ -3,22 +3,28 @@ import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
   addInventoryItem,
+  addSkill,
   fetchCharacterDetail,
   fetchCharacters,
   removeInventoryItem,
+  removeSkill,
   reorderInventory,
   setEquippedWeapon,
+  updateCharacterHp,
   updateInventoryItem,
 } from "../store/slices/characterSlice";
 import { fetchCampaignRole } from "../store/slices/campaignSlice";
 import { fetchItems } from "../store/slices/itemSlice";
 import { fetchClasses } from "../store/slices/classSlice";
+import { fetchSkills } from "../store/slices/skillSlice";
 import Panel from "../components/ui/Panel";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import Card from "../components/ui/Card";
 import SelectInput from "../components/ui/SelectInput";
 import TextInput from "../components/ui/TextInput";
-import { getDisplayStats } from "../utils/character";
+import CharacterBanner from "../components/CharacterBanner";
+import { getCombatStats, getDisplayStats } from "../utils/character";
+import { getItemRangeLabel } from "../utils/item";
 import type { CharacterItem, Item } from "../api/types";
 
 export default function CharacterViewer() {
@@ -30,10 +36,12 @@ export default function CharacterViewer() {
   const { role } = useAppSelector((state) => state.campaigns);
   const { items } = useAppSelector((state) => state.items);
   const { classes } = useAppSelector((state) => state.classes);
+  const { skills } = useAppSelector((state) => state.skills);
   const user = useAppSelector((state) => state.auth.user);
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
   const [inventoryDraft, setInventoryDraft] = useState<CharacterItem[]>([]);
   const [usesDraft, setUsesDraft] = useState<Record<string, string>>({});
+  const [currentHpDraft, setCurrentHpDraft] = useState<string>("");
 
   useEffect(() => {
     if (!campaignId) return;
@@ -41,6 +49,7 @@ export default function CharacterViewer() {
     dispatch(fetchCampaignRole(campaignId));
     dispatch(fetchItems());
     dispatch(fetchClasses());
+    dispatch(fetchSkills());
   }, [campaignId, dispatch]);
 
   useEffect(() => {
@@ -69,6 +78,9 @@ export default function CharacterViewer() {
       nextUses[item.id] = item.uses === null || item.uses === undefined ? "" : String(item.uses);
     });
     setUsesDraft(nextUses);
+    const maxHp = getDisplayStats(selectedCharacter.stats).hp ?? 0;
+    const currentHp = selectedCharacter.currentHp ?? maxHp;
+    setCurrentHpDraft(String(currentHp));
   }, [selectedCharacter]);
 
   const displayStats = useMemo(() => {
@@ -79,6 +91,37 @@ export default function CharacterViewer() {
   const weaponOptions = useMemo(() => {
     return inventoryDraft.filter((item) => item.item.category === "WEAPON");
   }, [inventoryDraft]);
+
+  const canEquipWeapon = useMemo(() => {
+    const rankOrder = ["E", "D", "C", "B", "A", "S"];
+    return (entry: CharacterItem) => {
+      if (!selectedCharacter?.className) return false;
+      const item = entry.item;
+      if (item.type?.toLowerCase() === "laguz") {
+        if (item.classRestriction && item.classRestriction !== selectedCharacter.className) {
+          return false;
+        }
+      }
+
+      const requiredRank = item.weaponRank ?? "E";
+      const currentRank = selectedCharacter.weaponSkills?.find(
+        (skill) => skill.weapon.toLowerCase() === item.type?.toLowerCase()
+      )?.rank;
+      if (!currentRank) return false;
+      return rankOrder.indexOf(currentRank) >= rankOrder.indexOf(requiredRank);
+    };
+  }, [selectedCharacter?.className, selectedCharacter?.weaponSkills]);
+
+  const itemGroups = useMemo(() => {
+    const groups = new Map<string, Item[]>();
+    items.forEach((item) => {
+      const key = item.type || "Other";
+      const bucket = groups.get(key) ?? [];
+      bucket.push(item);
+      groups.set(key, bucket);
+    });
+    return Array.from(groups.entries()).sort(([a], [b]) => a.localeCompare(b));
+  }, [items]);
 
   const statOrder = [
     { key: "strength", label: "Str" },
@@ -107,16 +150,14 @@ export default function CharacterViewer() {
     return slots;
   }, [inventoryDraft]);
 
-  const dummyCombatStats = [
-    { label: "Atk", value: 14 },
-    { label: "Hit", value: 126 },
-    { label: "Crit", value: 8 },
-    { label: "AS", value: 9 },
-    { label: "Avo", value: 32 },
-    { label: "Ddg", value: 9 },
-    { label: "Rng", value: "1-2" },
-    { label: "Effect", value: "-" },
-  ];
+  const equippedItem = useMemo(() => {
+    if (!selectedCharacter?.equippedWeaponItemId) return null;
+    return inventoryDraft.find((entry) => entry.id === selectedCharacter.equippedWeaponItemId) ?? null;
+  }, [inventoryDraft, selectedCharacter?.equippedWeaponItemId]);
+
+  const dummyCombatStats = useMemo(() => {
+    return getCombatStats(displayStats, equippedItem?.item ?? null);
+  }, [displayStats, equippedItem]);
 
   const canEditInventory = useMemo(() => {
     if (!selectedCharacter || !user) return false;
@@ -125,6 +166,32 @@ export default function CharacterViewer() {
   }, [role, selectedCharacter, user]);
 
   const canEditItems = role === "DM";
+  const canEditSkills = role === "DM";
+  const canEditHp = canEditInventory;
+
+  const characterSkills = selectedCharacter?.skills ?? [];
+  const weaponRankMap = useMemo(() => {
+    const map = new Map<string, string>();
+    (selectedCharacter?.weaponSkills ?? []).forEach((entry) => {
+      map.set(entry.weapon.toLowerCase(), entry.rank);
+    });
+    return map;
+  }, [selectedCharacter?.weaponSkills]);
+
+  const weaponRankRows = [
+    { key: "sword", label: "Sword" },
+    { key: "lance", label: "Lance" },
+    { key: "axe", label: "Axe" },
+    { key: "bow", label: "Bow" },
+    { key: "knife", label: "Knife" },
+    { key: "strike", label: "Strike" },
+    { key: "fire", label: "Fire" },
+    { key: "thunder", label: "Thunder" },
+    { key: "wind", label: "Wind" },
+    { key: "light", label: "Light" },
+    { key: "dark", label: "Dark" },
+    { key: "staff", label: "Staff" },
+  ];
 
   const handleUsesBlur = (inventoryId: string) => {
     if (!selectedCharacter) return;
@@ -180,6 +247,31 @@ export default function CharacterViewer() {
     }));
   };
 
+  const handleSkillAdd = async (skillId: string) => {
+    if (!selectedCharacter || !canEditSkills) return;
+    if (characterSkills.some((entry) => entry.skillId === skillId)) return;
+    await dispatch(addSkill({ characterId: selectedCharacter.id, skillId })).unwrap();
+  };
+
+  const handleSkillReplace = async (characterSkillId: string, nextSkillId: string) => {
+    if (!selectedCharacter || !canEditSkills) return;
+    const existing = characterSkills.find((entry) => entry.id === characterSkillId);
+    if (!existing || existing.skillId === nextSkillId) return;
+    if (characterSkills.some((entry) => entry.skillId === nextSkillId)) return;
+    await dispatch(removeSkill({ characterId: selectedCharacter.id, characterSkillId })).unwrap();
+    await dispatch(addSkill({ characterId: selectedCharacter.id, skillId: nextSkillId })).unwrap();
+  };
+
+  const handleHpBlur = () => {
+    if (!selectedCharacter || !canEditHp) return;
+    const value = Number(currentHpDraft);
+    if (Number.isNaN(value)) return;
+    const maxHp = displayStats.hp ?? 0;
+    const clamped = Math.max(0, Math.min(value, maxHp));
+    setCurrentHpDraft(String(clamped));
+    dispatch(updateCharacterHp({ characterId: selectedCharacter.id, currentHp: clamped }));
+  };
+
   return (
     <Panel>
       <h1>Character viewer</h1>
@@ -188,25 +280,18 @@ export default function CharacterViewer() {
       <div className="character-viewer-panel">
         {selectedCharacter ? (
           <Card className="character-sheet">
-            <div className="character-sheet-header">
-              <div className="character-name-block">
-                <h2>{selectedCharacter.name}</h2>
-                <div className="character-subtitle">
-                  <span>{selectedCharacter.className ?? "Unassigned class"}</span>
-                  <span>Lv {selectedCharacter.level ?? 1}</span>
-                  <span>Exp {selectedCharacter.exp ?? 0}</span>
-                </div>
-              </div>
-              <div className="character-portrait" aria-hidden="true" />
-              <div className="character-dummy-stats">
-                {dummyCombatStats.map((entry) => (
-                  <div key={entry.label} className="dummy-stat">
-                    <span>{entry.label}</span>
-                    <strong>{entry.value}</strong>
-                  </div>
-                ))}
-              </div>
-            </div>
+            <CharacterBanner
+              name={selectedCharacter.name}
+              className={selectedCharacter.className}
+              level={selectedCharacter.level}
+              exp={selectedCharacter.exp}
+              currentHp={currentHpDraft}
+              maxHp={displayStats.hp ?? 0}
+              canEditHp={canEditHp}
+              onHpChange={setCurrentHpDraft}
+              onHpBlur={handleHpBlur}
+              combatStats={dummyCombatStats}
+            />
             <div className="character-sheet-body">
               <div className="character-ability-panel">
                 <h3>Stats</h3>
@@ -248,29 +333,46 @@ export default function CharacterViewer() {
                     disabled={!canEditInventory}
                   >
                     <option value="">None</option>
-                    {weaponOptions.map((entry) => (
-                      <option key={entry.id} value={entry.id}>
-                        {entry.item.name}
-                      </option>
-                    ))}
+                    {weaponOptions.map((entry) => {
+                      const allowed = canEquipWeapon(entry);
+                      return (
+                        <option
+                          key={entry.id}
+                          value={entry.id}
+                          disabled={!allowed}
+                        >
+                          {entry.item.name}
+                          {!allowed ? " (restricted)" : ""}
+                        </option>
+                      );
+                    })}
                   </SelectInput>
                 </div>
                 <div className="inventory-selectors">
                   {slotItems.map((entry, index) => {
                     const currentUses = entry?.uses ?? entry?.item.uses ?? null;
                     const maxUses = entry?.item.uses ?? null;
+                    const item = entry?.item ?? null;
+                    const isWeapon = item?.category === "WEAPON";
+                    const rangeLabel = item
+                      ? getItemRangeLabel(item, { fallback: "-" }) ?? "-"
+                      : "-";
                     return (
-                      <div key={`slot-${index}`} className="inventory-slot">
+                      <div key={`slot-${index}`} className={`inventory-slot ${isWeapon ? "weapon" : ""}`.trim()}>
                         <SelectInput
                           value={entry?.itemId ?? ""}
                           onChange={(event) => handleSlotChange(index, event.target.value)}
                           disabled={!canEditItems}
                         >
                           <option value="">Empty slot</option>
-                          {items.map((item: Item) => (
-                            <option key={item.id} value={item.id}>
-                              {item.name}
-                            </option>
+                          {itemGroups.map(([group, groupItems]) => (
+                            <optgroup key={group} label={group}>
+                              {groupItems.map((item: Item) => (
+                                <option key={item.id} value={item.id}>
+                                  {item.name}
+                                </option>
+                              ))}
+                            </optgroup>
                           ))}
                         </SelectInput>
                         <div className="slot-uses">
@@ -291,10 +393,132 @@ export default function CharacterViewer() {
                             </>
                           )}
                         </div>
+                        {isWeapon && item && (
+                          <div className="weapon-tooltip" role="tooltip">
+                            <div className="weapon-tooltip-header">
+                              <strong>{item.name}</strong>
+                              <span className="muted">{item.weaponRank ?? "-"}</span>
+                            </div>
+                            <div className="weapon-tooltip-stats">
+                              <div><span>Mt</span><strong>{item.might ?? 0}</strong></div>
+                              <div><span>Hit</span><strong>{item.hit ?? 0}</strong></div>
+                              <div><span>Crit</span><strong>{item.crit ?? 0}</strong></div>
+                              <div><span>Wt</span><strong>{item.weight ?? 0}</strong></div>
+                              <div><span>Rng</span><strong>{rangeLabel}</strong></div>
+                            </div>
+                            {item.description && (
+                              <p className="muted weapon-tooltip-desc">{item.description}</p>
+                            )}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
                 </div>
+              </div>
+            </div>
+            <div className="character-extra-panel">
+              <div className="personal-data">
+                <h3>Personal Data</h3>
+                <div className="personal-list">
+                  <div className="personal-row">
+                    <span>Cn</span>
+                    <strong>{displayStats.constitution ?? 0}</strong>
+                  </div>
+                  <div className="personal-row">
+                    <span>Wt</span>
+                    <strong>--</strong>
+                  </div>
+                  <div className="personal-row">
+                    <span>Move</span>
+                    <strong>{displayStats.movement ?? 0}</strong>
+                  </div>
+                  <div className="personal-row">
+                    <span>Aff</span>
+                    <strong>--</strong>
+                  </div>
+                  <div className="personal-row">
+                    <span>Trv</span>
+                    <strong>--</strong>
+                  </div>
+                  <div className="personal-row">
+                    <span>Cd</span>
+                    <strong>--</strong>
+                  </div>
+                </div>
+              </div>
+              <div className="weapon-ranks">
+                <h3>Weapon Level</h3>
+                <div className="weapon-rank-grid">
+                  {weaponRankRows.map((row) => (
+                    <div key={row.key} className="weapon-rank-row">
+                      <span>{row.label}</span>
+                      <strong>{weaponRankMap.get(row.key) ?? "--"}</strong>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </div>
+            <div className="character-skills-panel">
+              <div className="items-header">
+                <h3>Skills</h3>
+                <span className="muted">{characterSkills.length}</span>
+              </div>
+              <div className="skills-list">
+                {characterSkills.map((entry) => (
+                  <div key={entry.id} className="skill-row">
+                    <SelectInput
+                      value={entry.skillId}
+                      onChange={(event) => handleSkillReplace(entry.id, event.target.value)}
+                      disabled={!canEditSkills}
+                    >
+                      {!skills.some((skill) => skill.id === entry.skillId) && (
+                        <option value={entry.skillId}>{entry.skill?.name ?? "Unknown skill"}</option>
+                      )}
+                      {skills.map((skill) => (
+                        <option key={skill.id} value={skill.id}>
+                          {skill.name}
+                        </option>
+                      ))}
+                    </SelectInput>
+                    {canEditSkills && (
+                      <button
+                        type="button"
+                        className="skill-remove"
+                        onClick={() =>
+                          dispatch(
+                            removeSkill({
+                              characterId: selectedCharacter.id,
+                              characterSkillId: entry.id,
+                            })
+                          )
+                        }
+                      >
+                        Remove
+                      </button>
+                    )}
+                    {entry.skill?.description && (
+                      <div className="skill-tooltip" role="tooltip">
+                        <strong>{entry.skill.name}</strong>
+                        <p className="muted">{entry.skill.description}</p>
+                      </div>
+                    )}
+                  </div>
+                ))}
+                {canEditSkills && (
+                  <div className="skill-row">
+                    <SelectInput value="" onChange={(event) => handleSkillAdd(event.target.value)}>
+                      <option value="">Add skill...</option>
+                      {skills
+                        .filter((skill) => !characterSkills.some((entry) => entry.skillId === skill.id))
+                        .map((skill) => (
+                          <option key={skill.id} value={skill.id}>
+                            {skill.name}
+                          </option>
+                        ))}
+                    </SelectInput>
+                  </div>
+                )}
               </div>
             </div>
           </Card>

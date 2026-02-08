@@ -27,9 +27,11 @@ export type Character = {
   className?: string | null;
   level?: number | null;
   exp?: number | null;
+  currentHp?: number | null;
   weaponSkills?: Array<{ weapon: string; rank: string }>;
   equippedWeaponItemId?: string | null;
   inventory?: CharacterItem[];
+  skills?: CharacterSkill[];
   owner?: {
     id: string;
     displayName: string;
@@ -42,6 +44,19 @@ export type CharacterItem = {
   uses?: number | null;
   sortOrder: number;
   item: Item;
+};
+
+export type Skill = {
+  id: string;
+  name: string;
+  description?: string | null;
+  activation?: string | null;
+};
+
+export type CharacterSkill = {
+  id: string;
+  skillId: string;
+  skill: Skill;
 };
 
 export type CampaignMember = {
@@ -145,6 +160,7 @@ export type Item = {
   name: string;
   type: string;
   category: "ITEM" | "WEAPON";
+  classRestriction?: string | null;
   damageType?: "PHYSICAL" | "MAGICAL" | null;
   weaponRank?: string | null;
   might?: number | null;

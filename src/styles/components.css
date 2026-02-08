@@ -263,6 +263,18 @@
   font-weight: 600;
 }
 
+.character-hp-line {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-weight: 600;
+}
+
+.character-hp-line input {
+  width: 72px;
+  text-align: center;
+}
+
 .character-portrait {
   width: 160px;
   height: 120px;
@@ -357,6 +369,7 @@
   border-radius: 10px;
   padding: 0.5rem 0.75rem;
   border: 1px solid rgba(148, 163, 184, 0.2);
+  position: relative;
 }
 
 .slot-uses {
@@ -367,6 +380,174 @@
 
 .slot-uses input {
   width: 64px;
+}
+
+.character-extra-panel {
+  display: grid;
+  grid-template-columns: minmax(220px, 1fr) minmax(320px, 1fr);
+  gap: 1.5rem;
+}
+
+.personal-data,
+.weapon-ranks {
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 0.8rem;
+}
+
+.personal-list {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.personal-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.weapon-rank-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(140px, 1fr));
+  gap: 0.4rem 1rem;
+}
+
+.weapon-rank-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.6rem;
+}
+
+.weapon-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  transform: translate(-50%, 10px);
+  min-width: 220px;
+  max-width: 300px;
+  background: rgba(18, 28, 40, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 0.75rem 0.9rem;
+  box-shadow: 0 16px 30px rgba(8, 15, 30, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 5;
+}
+
+.inventory-slot.weapon:hover .weapon-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.weapon-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0 10px;
+  border-style: solid;
+  border-color: rgba(18, 28, 40, 0.97) transparent transparent transparent;
+}
+
+.weapon-tooltip-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  margin-bottom: 0.5rem;
+}
+
+.weapon-tooltip-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(60px, 1fr));
+  gap: 0.4rem 0.6rem;
+  font-size: 0.85rem;
+}
+
+.weapon-tooltip-stats div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.weapon-tooltip-desc {
+  margin-top: 0.5rem;
+  font-size: 0.8rem;
+}
+
+.character-skills-panel {
+  margin-top: 1.5rem;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  border-radius: 14px;
+  padding: 1rem 1.25rem;
+  display: grid;
+  gap: 1rem;
+}
+
+.skills-list {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.skill-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  background: rgba(15, 23, 42, 0.6);
+  border-radius: 10px;
+  padding: 0.5rem 0.75rem;
+  border: 1px solid rgba(148, 163, 184, 0.2);
+  position: relative;
+}
+
+.skill-remove {
+  background: transparent;
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  color: #f8fafc;
+  padding: 0.4rem 0.6rem;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.skill-tooltip {
+  position: absolute;
+  left: 50%;
+  bottom: calc(100% + 12px);
+  transform: translate(-50%, 10px);
+  min-width: 220px;
+  max-width: 320px;
+  background: rgba(18, 28, 40, 0.97);
+  border: 1px solid rgba(148, 163, 184, 0.35);
+  border-radius: 12px;
+  padding: 0.6rem 0.8rem;
+  box-shadow: 0 16px 30px rgba(8, 15, 30, 0.5);
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.15s ease, transform 0.15s ease;
+  z-index: 5;
+}
+
+.skill-row:hover .skill-tooltip {
+  opacity: 1;
+  transform: translate(-50%, 0);
+}
+
+.skill-tooltip::after {
+  content: "";
+  position: absolute;
+  left: 50%;
+  bottom: -10px;
+  transform: translateX(-50%);
+  border-width: 10px 10px 0 10px;
+  border-style: solid;
+  border-color: rgba(18, 28, 40, 0.97) transparent transparent transparent;
 }
 
 .character-admin-actions {
@@ -465,6 +646,10 @@
   }
 
   .character-sheet-body {
+    grid-template-columns: 1fr;
+  }
+
+  .character-extra-panel {
     grid-template-columns: 1fr;
   }
 }

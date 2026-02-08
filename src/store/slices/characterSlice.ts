@@ -1,6 +1,6 @@
 import { createAsyncThunk, createSlice } from "@reduxjs/toolkit";
 import { apiFetch } from "../../api/client";
-import type { Character, CharacterItem } from "../../api/types";
+import type { Character, CharacterItem, CharacterSkill } from "../../api/types";
 
 type CharacterState = {
   characters: Character[];
@@ -162,6 +162,44 @@ export const updateCharacter = createAsyncThunk(
   }
 );
 
+export const updateCharacterHp = createAsyncThunk(
+  "characters/updateHp",
+  async (payload: { characterId: string; currentHp: number }) => {
+    const data = await apiFetch<{ character: Character }>(
+      `/characters/${payload.characterId}/hp`,
+      {
+        method: "PATCH",
+        body: JSON.stringify({ currentHp: payload.currentHp }),
+      }
+    );
+    return data.character;
+  }
+);
+
+export const addSkill = createAsyncThunk(
+  "characters/addSkill",
+  async (payload: { characterId: string; skillId: string }) => {
+    const data = await apiFetch<{ characterSkill: CharacterSkill }>(
+      `/characters/${payload.characterId}/skills`,
+      {
+        method: "POST",
+        body: JSON.stringify({ skillId: payload.skillId }),
+      }
+    );
+    return { characterId: payload.characterId, characterSkill: data.characterSkill };
+  }
+);
+
+export const removeSkill = createAsyncThunk(
+  "characters/removeSkill",
+  async (payload: { characterId: string; characterSkillId: string }) => {
+    await apiFetch(`/characters/${payload.characterId}/skills/${payload.characterSkillId}`, {
+      method: "DELETE",
+    });
+    return payload;
+  }
+);
+
 const sortInventory = (items: CharacterItem[]) =>
   [...items].sort((a, b) => a.sortOrder - b.sortOrder);
 
@@ -236,6 +274,26 @@ const characterSlice = createSlice({
         state.selectedCharacter = action.payload;
         state.characters = state.characters.map((character) =>
           character.id === action.payload.id ? { ...character, ...action.payload } : character
+        );
+      })
+      .addCase(addSkill.fulfilled, (state, action) => {
+        if (state.selectedCharacter?.id !== action.payload.characterId) return;
+        const existing = state.selectedCharacter.skills ?? [];
+        state.selectedCharacter.skills = [...existing, action.payload.characterSkill];
+      })
+      .addCase(removeSkill.fulfilled, (state, action) => {
+        if (state.selectedCharacter?.id !== action.payload.characterId) return;
+        state.selectedCharacter.skills = (state.selectedCharacter.skills ?? []).filter(
+          (skill) => skill.id !== action.payload.characterSkillId
+        );
+      })
+      .addCase(updateCharacterHp.fulfilled, (state, action) => {
+        if (state.selectedCharacter?.id !== action.payload.id) return;
+        state.selectedCharacter.currentHp = action.payload.currentHp ?? null;
+        state.characters = state.characters.map((character) =>
+          character.id === action.payload.id
+            ? { ...character, currentHp: action.payload.currentHp ?? null }
+            : character
         );
       });
   },

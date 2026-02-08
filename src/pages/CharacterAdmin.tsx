@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -49,6 +49,22 @@ export default function CharacterAdmin() {
   const [autoLevel, setAutoLevel] = useState(false);
   const [lastLevel, setLastLevel] = useState(1);
 
+  const resetForm = useCallback((options: { clearSelection?: boolean } = {}) => {
+    setName("");
+    setStats(defaultStats);
+    setClassName("");
+    setLevel(1);
+    setLastLevel(1);
+    setExp(0);
+    setKind("PLAYER");
+    setOwnerId("");
+    setWeaponSelections({});
+    setAutoLevel(false);
+    if (options.clearSelection) {
+      setSelectedCharacterId(null);
+    }
+  }, []);
+
   const statKeys = useMemo(() => Object.keys(stats), [stats]);
   const classTreeOptions = useMemo(() => {
     const byName = new Map(classes.map((gameClass) => [gameClass.name, gameClass]));
@@ -89,17 +105,8 @@ export default function CharacterAdmin() {
 
   useEffect(() => {
     if (selectedCharacterId !== null) return;
-    setName("");
-    setStats(defaultStats);
-    setClassName("");
-    setLevel(1);
-    setLastLevel(1);
-    setExp(0);
-    setKind("PLAYER");
-    setOwnerId("");
-    setWeaponSelections({});
-    setAutoLevel(false);
-  }, [selectedCharacterId]);
+    resetForm();
+  }, [resetForm, selectedCharacterId]);
 
   useEffect(() => {
     if (!selectedCharacter) return;
@@ -197,15 +204,7 @@ export default function CharacterAdmin() {
           weaponSkills,
         })
       ).unwrap();
-      setName("");
-      setStats(defaultStats);
-      setClassName("");
-      setLevel(1);
-      setExp(0);
-      setKind("PLAYER");
-      setOwnerId("");
-      setWeaponSelections({});
-      setSelectedCharacterId(null);
+      resetForm({ clearSelection: true });
     } catch {
       return;
     }
@@ -244,17 +243,7 @@ export default function CharacterAdmin() {
   };
 
   const startNewCharacter = () => {
-    setSelectedCharacterId(null);
-    setName("");
-    setStats(defaultStats);
-    setClassName("");
-    setLevel(1);
-    setLastLevel(1);
-    setExp(0);
-    setKind("PLAYER");
-    setOwnerId("");
-    setWeaponSelections({});
-    setAutoLevel(false);
+    resetForm({ clearSelection: true });
   };
 
   const playerMembers = members.filter((member) => member.role === "PLAYER");

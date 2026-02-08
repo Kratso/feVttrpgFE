@@ -1,20 +1,9 @@
 import type { Item } from "../api/types";
+import { getItemRangeLabel } from "../utils/item";
 
 const formatDamageType = (value?: Item["damageType"]) => {
   if (!value) return null;
   return value === "PHYSICAL" ? "Physical" : "Magical";
-};
-
-const formatRange = (item: Item) => {
-  if (item.rangeFormula) {
-    return item.rangeFormula;
-  }
-  if (item.minRange === null && item.maxRange === null) {
-    return item.type === "staff" ? "-" : null;
-  }
-  const min = item.minRange ?? 1;
-  const max = item.maxRange ?? item.minRange ?? 1;
-  return `${min}-${max}`;
 };
 
 type ChipEntry = {
@@ -67,7 +56,9 @@ export default function ItemDetail({ item }: { item: Item | null }) {
     return <p className="muted">Select an item or weapon to inspect details.</p>;
   }
 
-  const range = formatRange(item);
+  const range = getItemRangeLabel(item, {
+    fallback: (item.type ?? "").toLowerCase() === "staff" ? "-" : null,
+  });
   const damageType = formatDamageType(item.damageType);
   const attributes: ChipEntry[] = [
     { label: "Might", value: item.might },

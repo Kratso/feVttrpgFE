@@ -5,6 +5,7 @@ import characterReducer from "./slices/characterSlice.ts";
 import mapReducer from "./slices/mapSlice.ts";
 import classReducer from "./slices/classSlice.ts";
 import itemReducer from "./slices/itemSlice.ts";
+import skillReducer from "./slices/skillSlice.ts";
 
 export const store = configureStore({
   reducer: {
@@ -14,6 +15,7 @@ export const store = configureStore({
     maps: mapReducer,
     classes: classReducer,
     items: itemReducer,
+    skills: skillReducer,
   },
 });
 
