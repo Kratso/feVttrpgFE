@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
 import { useAppDispatch, useAppSelector } from "../store/hooks";
 import {
@@ -28,6 +28,7 @@ import { getItemRangeLabel } from "../utils/item";
 import type { CharacterItem, Item } from "../api/types";
 
 export default function CharacterViewer() {
+  const staffRangeBoostSkillId = "cmlcdhzfz003rlj6wpru1th44";
   const { campaignId } = useParams();
   const dispatch = useAppDispatch();
   const { characters, selectedCharacter, detailLoading, error } = useAppSelector(
@@ -155,9 +156,124 @@ export default function CharacterViewer() {
     return inventoryDraft.find((entry) => entry.id === selectedCharacter.equippedWeaponItemId) ?? null;
   }, [inventoryDraft, selectedCharacter?.equippedWeaponItemId]);
 
+  const bonusStats = useMemo(() => {
+    const bonus = equippedItem?.item?.bonus;
+    if (!bonus || typeof bonus !== "object") return {} as Record<string, number>;
+    const next: Record<string, number> = {};
+    Object.entries(bonus).forEach(([key, value]) => {
+      if (typeof value === "number") {
+        next[key] = value;
+      }
+    });
+    return next;
+  }, [equippedItem]);
+
+  const skillBonusStats = useMemo(() => {
+    const next: Record<string, number> = {};
+    (selectedCharacter?.skills ?? []).forEach((entry) => {
+      const bonus = entry.skill?.bonusStats;
+      if (!bonus || typeof bonus !== "object") return;
+      Object.entries(bonus).forEach(([key, value]) => {
+        if (typeof value !== "number") return;
+        next[key] = (next[key] ?? 0) + value;
+      });
+    });
+    return next;
+  }, [selectedCharacter?.skills]);
+
+  const effectiveStats = useMemo(() => {
+    const totals: Record<string, number> = { ...displayStats };
+    Object.entries(bonusStats).forEach(([key, value]) => {
+      totals[key] = (totals[key] ?? 0) + value;
+    });
+    Object.entries(skillBonusStats).forEach(([key, value]) => {
+      totals[key] = (totals[key] ?? 0) + value;
+    });
+    return totals;
+  }, [bonusStats, displayStats, skillBonusStats]);
+
+  const hasStaffRangeBoost = useMemo(() => {
+    return (selectedCharacter?.skills ?? []).some(
+      (entry) => entry.skillId === staffRangeBoostSkillId || entry.skill?.id === staffRangeBoostSkillId
+    );
+  }, [selectedCharacter?.skills, staffRangeBoostSkillId]);
+
+  const applyStaffRangeBoost = useCallback((item: Item | null, range: string | number): string | number => {
+    if (!hasStaffRangeBoost || !item || item.type?.toLowerCase() !== "staff") {
+      return range;
+    }
+
+    const minRange = item.minRange ?? null;
+    let maxRange = item.maxRange ?? null;
+
+    if (typeof maxRange === "number" && maxRange < 10) {
+      maxRange = 10;
+    }
+
+    if (typeof minRange === "number" && typeof maxRange === "number") {
+      return minRange === maxRange ? String(maxRange) : `${minRange}-${maxRange}`;
+    }
+
+    if (typeof maxRange === "number") {
+      return String(maxRange);
+    }
+
+    if (typeof range === "number") {
+      return range < 10 ? 10 : range;
+    }
+
+    if (typeof range === "string") {
+      const match = range.match(/^(\d+)(?:-(\d+))?$/);
+      if (match) {
+        const minParsed = Number(match[1]);
+        const maxParsed = Number(match[2] ?? match[1]);
+        const boostedMax = Math.max(maxParsed, 10);
+        return match[2] ? `${minParsed}-${boostedMax}` : String(boostedMax);
+      }
+    }
+
+    return range;
+  }, [hasStaffRangeBoost]);
+
   const dummyCombatStats = useMemo(() => {
-    return getCombatStats(displayStats, equippedItem?.item ?? null);
-  }, [displayStats, equippedItem]);
+    const baseStats = getCombatStats(effectiveStats, equippedItem?.item ?? null).map((entry) => {
+      if (entry.label !== "Rng") return entry;
+      return {
+        ...entry,
+        value: applyStaffRangeBoost(equippedItem?.item ?? null, entry.value),
+      };
+    });
+    const derivedBonus: Record<string, number> = {};
+    (selectedCharacter?.skills ?? []).forEach((entry) => {
+      const bonus = entry.skill?.bonusDerived;
+      if (!bonus || typeof bonus !== "object") return;
+      Object.entries(bonus).forEach(([key, value]) => {
+        if (typeof value !== "number") return;
+        derivedBonus[key] = (derivedBonus[key] ?? 0) + value;
+      });
+    });
+
+    const labelMap: Record<string, string> = {
+      Atk: "atk",
+      Hit: "hit",
+      Crit: "crit",
+      AS: "as",
+      Avo: "avoid",
+      Ddg: "dodge",
+      Rng: "range",
+    };
+
+    return baseStats.map((entry) => {
+      const key = labelMap[entry.label];
+      if (!key) return entry;
+      const bonus = derivedBonus[key] ?? 0;
+      if (bonus === 0) return entry;
+      if (typeof entry.value === "number") {
+        return { ...entry, value: entry.value + bonus };
+      }
+      return entry;
+    });
+  }, [applyStaffRangeBoost, effectiveStats, equippedItem, selectedCharacter?.skills]);
 
   const canEditInventory = useMemo(() => {
     if (!selectedCharacter || !user) return false;
@@ -266,7 +382,7 @@ export default function CharacterViewer() {
     if (!selectedCharacter || !canEditHp) return;
     const value = Number(currentHpDraft);
     if (Number.isNaN(value)) return;
-    const maxHp = displayStats.hp ?? 0;
+    const maxHp = (displayStats.hp ?? 0) + (bonusStats.hp ?? 0) + (skillBonusStats.hp ?? 0);
     const clamped = Math.max(0, Math.min(value, maxHp));
     setCurrentHpDraft(String(clamped));
     dispatch(updateCharacterHp({ characterId: selectedCharacter.id, currentHp: clamped }));
@@ -286,7 +402,7 @@ export default function CharacterViewer() {
               level={selectedCharacter.level}
               exp={selectedCharacter.exp}
               currentHp={currentHpDraft}
-              maxHp={displayStats.hp ?? 0}
+              maxHp={(displayStats.hp ?? 0) + (bonusStats.hp ?? 0) + (skillBonusStats.hp ?? 0)}
               canEditHp={canEditHp}
               onHpChange={setCurrentHpDraft}
               onHpBlur={handleHpBlur}
@@ -298,16 +414,40 @@ export default function CharacterViewer() {
                 <div className="ability-list">
                   {statOrder.map((stat) => {
                     const value = displayStats[stat.key] ?? 0;
+                    const weaponBonusValue = bonusStats[stat.key] ?? 0;
+                    const skillBonusValue = skillBonusStats[stat.key] ?? 0;
+                    const totalBonus = weaponBonusValue + skillBonusValue;
+                    const totalValue = value + totalBonus;
                     const maxValue = classMaxStats[stat.key] ?? value;
                     const ratio = maxValue > 0 ? Math.min(1, value / maxValue) : 0;
+                    const bonusRatio = maxValue > 0 ? totalBonus / maxValue : 0;
                     const isMaxed = maxValue > 0 && value >= maxValue;
+                    const hasBonus = totalBonus !== 0;
+                    const bonusParts = [
+                      weaponBonusValue ? `Weapon ${weaponBonusValue > 0 ? "+" : ""}${weaponBonusValue}` : null,
+                      skillBonusValue ? `Skills ${skillBonusValue > 0 ? "+" : ""}${skillBonusValue}` : null,
+                    ].filter(Boolean);
                     return (
-                      <div key={stat.key} className={`ability-row ${isMaxed ? "maxed" : ""}`.trim()}>
+                      <div
+                        key={stat.key}
+                        className={`ability-row ${isMaxed ? "maxed" : ""} ${hasBonus ? "has-bonus" : ""}`.trim()}
+                      >
                         <span className="ability-label">{stat.label}</span>
                         <div className="ability-bar">
                           <div className="ability-fill" style={{ width: `${ratio * 100}%` }} />
+                          {totalBonus > 0 && (
+                            <div
+                              className="ability-bonus"
+                              style={{ left: `${ratio * 100}%`, width: `${bonusRatio * 100}%` }}
+                            />
+                          )}
                         </div>
-                        <strong>{value}</strong>
+                        <strong>{totalValue}</strong>
+                        {hasBonus && (
+                          <div className="stat-bonus-tooltip" role="tooltip">
+                            {bonusParts.length > 0 ? bonusParts.join(" · ") : "Bonus applied"}
+                          </div>
+                        )}
                       </div>
                     );
                   })}
@@ -354,9 +494,10 @@ export default function CharacterViewer() {
                     const maxUses = entry?.item.uses ?? null;
                     const item = entry?.item ?? null;
                     const isWeapon = item?.category === "WEAPON";
-                    const rangeLabel = item
+                    const rawRangeLabel = item
                       ? getItemRangeLabel(item, { fallback: "-" }) ?? "-"
                       : "-";
+                    const rangeLabel = applyStaffRangeBoost(item, rawRangeLabel);
                     return (
                       <div key={`slot-${index}`} className={`inventory-slot ${isWeapon ? "weapon" : ""}`.trim()}>
                         <SelectInput

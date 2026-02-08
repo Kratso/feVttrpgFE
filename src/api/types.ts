@@ -51,6 +51,8 @@ export type Skill = {
   name: string;
   description?: string | null;
   activation?: string | null;
+  bonusStats?: Record<string, number> | null;
+  bonusDerived?: Record<string, number> | null;
 };
 
 export type CharacterSkill = {
