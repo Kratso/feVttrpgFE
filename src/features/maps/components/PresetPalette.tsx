@@ -46,9 +46,9 @@ export default function PresetPalette({
         >
           Tile brush
         </Button>
-        {presets.map((preset) => (
+        {presets.map((preset, index) => (
           <Button
-            key={preset.id}
+            key={`${preset.id}-${index}`}
             type="button"
             variant={preset.id === activePresetId ? "primary" : "ghost"}
             onClick={() => onSelectPreset(preset.id)}
@@ -70,9 +70,9 @@ export default function PresetPalette({
         }}
       >
         {presets.length === 0 && <p className="muted">No presets available.</p>}
-        {presets.map((preset) => (
+        {presets.map((preset, index) => (
           <button
-            key={preset.id}
+            key={`${preset.id}-${index}`}
             type="button"
             onClick={() => onSelectPreset(preset.id)}
             style={{

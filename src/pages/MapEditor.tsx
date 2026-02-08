@@ -160,8 +160,8 @@ export default function MapEditor() {
             <option value="" disabled>
               Select a map
             </option>
-            {maps.map((map) => (
-              <option key={map.id} value={map.id}>
+            {maps.map((map, index) => (
+              <option key={`${map.id}-${index}`} value={map.id}>
                 {map.name}
               </option>
             ))}
@@ -177,8 +177,8 @@ export default function MapEditor() {
           <Field label="Preset">
             <SelectInput value={activePresetId ?? ""} onChange={(event) => setActivePresetId(event.target.value || null)}>
               <option value="">No preset</option>
-              {presets.map((preset) => (
-                <option key={preset.id} value={preset.id}>
+              {presets.map((preset, index) => (
+                <option key={`${preset.id}-${index}`} value={preset.id}>
                   {preset.name}
                 </option>
               ))}

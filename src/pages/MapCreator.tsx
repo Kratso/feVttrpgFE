@@ -137,8 +137,8 @@ export default function MapCreator() {
             <option value="" disabled>
               Select a tileset
             </option>
-            {tileSets.map((tileSet) => (
-              <option key={tileSet.id} value={tileSet.id}>
+            {tileSets.map((tileSet, index) => (
+              <option key={`${tileSet.id}-${index}`} value={tileSet.id}>
                 {tileSet.name}
               </option>
             ))}
@@ -147,8 +147,8 @@ export default function MapCreator() {
         <Field label="Preset">
           <SelectInput value={activePresetId ?? ""} onChange={(event) => setActivePresetId(event.target.value || null)}>
             <option value="">No preset</option>
-            {presets.map((preset) => (
-              <option key={preset.id} value={preset.id}>
+            {presets.map((preset, index) => (
+              <option key={`${preset.id}-${index}`} value={preset.id}>
                 {preset.name}
               </option>
             ))}

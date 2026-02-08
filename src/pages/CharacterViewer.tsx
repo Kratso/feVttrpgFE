@@ -22,8 +22,8 @@ export default function CharacterViewer() {
       <p className="muted">Inspired by the Radiant Dawn stat viewer layout.</p>
       <ErrorBanner message={error} />
       <div className="stat-grid">
-        {characters.map((character) => (
-          <StatCard key={character.id} character={character} />
+        {characters.map((character, index) => (
+          <StatCard key={`${character.id}-${index}`} character={character} />
         ))}
       </div>
     </Panel>

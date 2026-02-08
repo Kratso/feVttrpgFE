@@ -72,8 +72,8 @@ export default function ItemViewer({ layout = "split" }: ItemViewerProps) {
             <Field label="Items">
               <SelectInput value={selectedItemId ?? ""} onChange={(e) => onSelectItem(e.target.value)}>
                 <option value="">Select item</option>
-                {itemOptions.map((item) => (
-                  <option key={item.id} value={item.id}>
+                {itemOptions.map((item, idx) => (
+                  <option key={`${item.id}-${idx}`} value={item.id}>
                     {item.name}
                   </option>
                 ))}
@@ -82,10 +82,10 @@ export default function ItemViewer({ layout = "split" }: ItemViewerProps) {
             <Field label="Weapons">
               <SelectInput value={selectedWeaponId ?? ""} onChange={(e) => onSelectWeapon(e.target.value)}>
                 <option value="">Select weapon</option>
-                {weaponGroups.map(([group, entries]) => (
-                  <optgroup key={group} label={group}>
-                    {entries.map((weapon) => (
-                      <option key={weapon.id} value={weapon.id}>
+                {weaponGroups.map(([group, entries], groupIdx) => (
+                  <optgroup key={`${group}-${groupIdx}`} label={group}>
+                    {entries.map((weapon, idx) => (
+                      <option key={`${weapon.id}-${idx}`} value={weapon.id}>
                         {weapon.name}
                       </option>
                     ))}

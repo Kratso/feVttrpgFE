@@ -18,8 +18,8 @@ export default function StatCard({ character }: { character: Character }) {
         </p>
       )}
       <div className="stat-body">
-        {Object.entries(displayStats).map(([label, value]) => (
-          <div key={label} className="stat-line">
+        {Object.entries(displayStats).map(([label, value], idx) => (
+          <div key={`${label}-${idx}`} className="stat-line">
             <span>{label}</span>
             <strong>{value}</strong>
           </div>

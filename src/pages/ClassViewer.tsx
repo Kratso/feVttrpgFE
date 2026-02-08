@@ -32,8 +32,9 @@ export default function ClassViewer() {
   const renderTree = (name: string) => {
     const node = classMap.get(name);
     if (!node) return null;
+    // Use node.id as key if available, otherwise fallback to name
     return (
-      <li key={name}>
+      <li key={node.id || name}>
         <button
           className={`tree-item ${selectedName === name ? "active" : ""}`}
           onClick={() => setSelectedName(name)}

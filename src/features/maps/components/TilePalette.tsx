@@ -41,9 +41,9 @@ export default function TilePalette({
       <h3>{title}</h3>
       <p className="muted">{description}</p>
       <div style={{ display: "flex", flexWrap: "wrap", gap: "0.5rem", marginBottom: "0.75rem" }}>
-        {tileSets.map((tileSet) => (
+        {tileSets.map((tileSet, index) => (
           <Button
-            key={tileSet.id}
+            key={`${tileSet.id}-${index}`}
             type="button"
             variant={tileSet.id === activeTileSet.id ? "primary" : "ghost"}
             onClick={() => onSelectTileSet(tileSet.id)}
@@ -71,9 +71,9 @@ export default function TilePalette({
         >
           {[...activeTileSet.tiles]
             .sort((a, b) => a.index - b.index)
-            .map((tile) => (
+            .map((tile, index) => (
               <button
-                key={tile.id}
+                key={`${tile.id}-${index}`}
                 type="button"
                 onClick={() => onSelectTile(tile.id)}
                 style={{

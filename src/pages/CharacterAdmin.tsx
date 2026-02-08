@@ -147,8 +147,8 @@ export default function CharacterAdmin() {
           <Field label="Class">
             <SelectInput value={className} onChange={(e) => handleClassChange(e.target.value)}>
               <option value="">Select class</option>
-              {classTreeOptions.map((option) => (
-                <option key={option.name} value={option.name}>
+              {classTreeOptions.map((option, idx) => (
+                <option key={`${option.name}-${idx}`} value={option.name}>
                   {option.label}
                 </option>
               ))}
@@ -174,8 +174,8 @@ export default function CharacterAdmin() {
           </Field>
         </div>
         <div className="stats-grid">
-          {weaponTypes.map((weapon) => (
-            <label key={weapon} className="check-field">
+          {weaponTypes.map((weapon, idx) => (
+            <label key={`${weapon}-${idx}`} className="check-field">
               <input
                 type="checkbox"
                 checked={!!weaponSelections[weapon]}
@@ -210,8 +210,8 @@ export default function CharacterAdmin() {
           </Field>
         )}
         <div className="stats-grid">
-          {statKeys.map((key) => (
-            <Field key={key} label={key}>
+          {statKeys.map((key, idx) => (
+            <Field key={`${key}-${idx}`} label={key}>
               <TextInput
                 type="number"
                 value={stats[key as keyof typeof stats]}
@@ -245,8 +245,8 @@ export default function CharacterAdmin() {
             )}
             <p className="muted">Owner: {character.owner?.displayName ?? "Unassigned"}</p>
             <div className="stat-row">
-              {Object.entries(getDisplayStats(character.stats)).map(([label, value]) => (
-                <div key={label} className="stat-chip">
+              {Object.entries(getDisplayStats(character.stats)).map(([label, value], idx) => (
+                <div key={`${label}-${idx}`} className="stat-chip">
                   <span>{label}</span>
                   <strong>{value}</strong>
                 </div>

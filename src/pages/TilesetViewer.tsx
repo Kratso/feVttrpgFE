@@ -28,8 +28,8 @@ export default function TilesetViewer() {
       {loading && <p>Loading tilesets...</p>}
       {!loading && tileSets.length === 0 && <p>No tilesets found.</p>}
       <div className="stack">
-        {tileSets.map((tileSet) => (
-          <div key={tileSet.id} className="card">
+        {tileSets.map((tileSet, index) => (
+          <div key={`${tileSet.id}-${index}`} className="card">
             <h3>{tileSet.name}</h3>
             <p>
               {tileSet.columns}x{tileSet.rows} tiles at {tileSet.tileSizeX}x{tileSet.tileSizeY}px
@@ -45,9 +45,9 @@ export default function TilesetViewer() {
               >
                 {[...tileSet.tiles]
                   .sort((a, b) => a.index - b.index)
-                  .map((tile) => (
+                  .map((tile, tileIndex) => (
                     <img
-                      key={tile.id}
+                      key={`${tile.id}-${tileIndex}`}
                       src={tile.imageUrl}
                       alt={`${tileSet.name} ${tile.index}`}
                       width={tileSet.tileSizeX}
