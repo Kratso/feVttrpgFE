@@ -43,6 +43,8 @@ export default function TokenList({
       {tokens.map((token) => {
         const visibility = visibilityById[token.id] ?? "PUBLIC";
         const isSelected = token.id === selectedTokenId;
+        const characterName = token.character?.name ?? "Unassigned";
+        const ownerName = token.character?.owner?.displayName ?? "Unknown";
         return (
           <div
             key={token.id}
@@ -57,6 +59,10 @@ export default function TokenList({
                 <span className="token-swatch" style={{ backgroundColor: token.color }} />
                 <strong>{token.label}</strong>
                 <span className="muted">({token.x}, {token.y})</span>
+              </div>
+              <div className="token-character">
+                <span className="muted">{characterName}</span>
+                <span className="muted">{ownerName}</span>
               </div>
               {role === "DM" ? (
                 <SelectInput

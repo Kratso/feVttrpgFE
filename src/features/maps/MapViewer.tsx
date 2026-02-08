@@ -24,6 +24,7 @@ export default function MapViewer() {
   const dispatch = useAppDispatch();
   const { maps, selectedMapId, map, tokens, error } = useAppSelector((state) => state.maps);
   const { role } = useAppSelector((state) => state.campaigns);
+  const { characters } = useAppSelector((state) => state.characters);
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [showTokenList, setShowTokenList] = useState(false);
@@ -65,7 +66,13 @@ export default function MapViewer() {
 
   const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved);
 
-  const handleCreateToken = async (payload: { label: string; x: number; y: number; color: string }) => {
+  const handleCreateToken = async (payload: {
+    label: string;
+    x: number;
+    y: number;
+    color: string;
+    characterId: string;
+  }) => {
     if (!selectedMapId) return false;
     try {
       await dispatch(
@@ -75,6 +82,7 @@ export default function MapViewer() {
           x: payload.x,
           y: payload.y,
           color: payload.color,
+          characterId: payload.characterId,
         })
       ).unwrap();
       return true;
@@ -124,7 +132,7 @@ export default function MapViewer() {
           isOpen={showTokenForm}
           onToggle={() => setShowTokenForm((open) => !open)}
         >
-          <CreateTokenForm onCreateToken={handleCreateToken} />
+          <CreateTokenForm onCreateToken={handleCreateToken} characters={characters} />
         </FloatingPanel>
       )}
 

@@ -94,7 +94,14 @@ export const updateMap = createAsyncThunk(
 
 export const createToken = createAsyncThunk(
   "maps/createToken",
-  async (payload: { mapId: string; label: string; x: number; y: number; color: string }) => {
+  async (payload: {
+    mapId: string;
+    label: string;
+    x: number;
+    y: number;
+    color: string;
+    characterId: string;
+  }) => {
     await apiFetch(`/maps/${payload.mapId}/tokens`, {
       method: "POST",
       body: JSON.stringify({
@@ -102,6 +109,7 @@ export const createToken = createAsyncThunk(
         x: payload.x,
         y: payload.y,
         color: payload.color,
+        characterId: payload.characterId,
       }),
     });
     const data = await apiFetch<{ tokens: Token[] }>(`/maps/${payload.mapId}/tokens`);

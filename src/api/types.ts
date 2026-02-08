@@ -78,6 +78,14 @@ export type Token = {
   x: number;
   y: number;
   color: string;
+  character?: {
+    id: string;
+    name: string;
+    owner?: {
+      id: string;
+      displayName: string;
+    } | null;
+  } | null;
 };
 
 export type Tile = {
