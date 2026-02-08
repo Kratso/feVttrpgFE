@@ -126,6 +126,20 @@ export type TilePreset = {
   createdAt: string;
 };
 
+export type AuditLog = {
+  id: string;
+  entityType: "MAP" | "CHARACTER";
+  entityId: string;
+  action: string;
+  before?: unknown | null;
+  after?: unknown | null;
+  createdAt: string;
+  user: {
+    id: string;
+    displayName: string;
+  };
+};
+
 export type Item = {
   id: string;
   name: string;

@@ -15,6 +15,7 @@ import TilesetViewer from "./pages/TilesetViewer";
 import PresetBuilder from "./pages/PresetBuilder";
 import ClassViewer from "./pages/ClassViewer";
 import ItemViewer from "./pages/ItemViewer";
+import LogAudit from "./pages/LogAudit";
 import { useAppDispatch, useAppSelector } from "./store/hooks";
 import { fetchMe, logout, sessionExpired } from "./store/slices/authSlice";
 import Button from "./components/ui/Button";
@@ -188,6 +189,14 @@ function App() {
           element={
             <RequireAuth>
               <Navigate to="../maps/view" replace />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/logs"
+          element={
+            <RequireAuth>
+              <LogAudit />
             </RequireAuth>
           }
         />

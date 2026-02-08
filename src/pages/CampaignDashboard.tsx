@@ -65,6 +65,12 @@ export default function CampaignDashboard() {
             <p className="muted">Create reusable tile presets.</p>
           </CardLink>
         )}
+        {role === "DM" && (
+          <CardLink to={`/campaigns/${campaignId}/logs`}>
+            <h3>Log audit</h3>
+            <p className="muted">Review map and character changes.</p>
+          </CardLink>
+        )}
         <CardLink to={`/campaigns/${campaignId}/tilesets/view`}>
           <h3>Tileset viewer</h3>
           <p className="muted">Browse all tilesets and tiles.</p>
