@@ -28,10 +28,20 @@ export type Character = {
   level?: number | null;
   exp?: number | null;
   weaponSkills?: Array<{ weapon: string; rank: string }>;
+  equippedWeaponItemId?: string | null;
+  inventory?: CharacterItem[];
   owner?: {
     id: string;
     displayName: string;
   };
+};
+
+export type CharacterItem = {
+  id: string;
+  itemId: string;
+  uses?: number | null;
+  sortOrder: number;
+  item: Item;
 };
 
 export type CampaignMember = {
