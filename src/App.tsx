@@ -7,6 +7,7 @@ import Campaigns from "./pages/Campaigns";
 import CampaignDashboard from "./pages/CampaignDashboard";
 import CharacterAdmin from "./pages/CharacterAdmin";
 import CharacterViewer from "./pages/CharacterViewer";
+import BattleCalculator from "./pages/BattleCalculator";
 import MapViewer from "./features/maps/MapViewer";
 import MapCreator from "./pages/MapCreator";
 import MapEditor from "./pages/MapEditor";
@@ -205,6 +206,14 @@ function App() {
           element={
             <RequireAuth>
               <MapViewer />
+            </RequireAuth>
+          }
+        />
+        <Route
+          path="/campaigns/:campaignId/battle"
+          element={
+            <RequireAuth>
+              <BattleCalculator />
             </RequireAuth>
           }
         />

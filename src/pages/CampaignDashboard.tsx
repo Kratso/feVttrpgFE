@@ -41,6 +41,10 @@ export default function CampaignDashboard() {
           <h3>Map viewer</h3>
           <p className="muted">Grid overlay with tokens and realtime updates.</p>
         </CardLink>
+        <CardLink to={`/campaigns/${campaignId}/battle`}>
+          <h3>Battle calculator</h3>
+          <p className="muted">Simulate combat outcomes with weapons and skills.</p>
+        </CardLink>
         {role === "DM" && (
           <CardLink to={`/campaigns/${campaignId}/maps/create`}>
             <h3>Map creator</h3>

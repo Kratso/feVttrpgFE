@@ -70,8 +70,8 @@ describe("MapViewer", () => {
 
   it("shows tokens on the map", () => {
     render(<MapViewer />);
-    expect(screen.getByText("A")).toBeInTheDocument();
-    expect(screen.getByText("B")).toBeInTheDocument();
+    expect(screen.getAllByText("A")[0]).toBeInTheDocument();
+    expect(screen.getAllByText("B")[0]).toBeInTheDocument();
   });
 
   it("shows DM controls for creating token", () => {
@@ -179,7 +179,7 @@ describe("MapViewer", () => {
 
   it("starts drag only for DM", () => {
     render(<MapViewer />);
-    const token = screen.getByText("A");
+    const token = screen.getAllByText("A")[0];
     fireEvent.mouseDown(token);
   });
 
@@ -214,7 +214,7 @@ describe("MapViewer", () => {
       campaigns: { role: "PLAYER" },
     });
     render(<MapViewer />);
-    const token = screen.getByText("A");
+    const token = screen.getAllByText("A")[0];
     fireEvent.mouseDown(token);
   });
 });

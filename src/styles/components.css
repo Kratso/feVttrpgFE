@@ -113,6 +113,71 @@
   margin-bottom: 1.5rem;
 }
 
+.battle-grid {
+  display: grid;
+  gap: 1.5rem;
+  grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+  margin-top: 1.5rem;
+}
+
+.battle-side {
+  display: grid;
+  gap: 1rem;
+}
+
+.battle-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.battle-controls {
+  display: grid;
+  gap: 0.8rem;
+}
+
+.battle-stats,
+.battle-results {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+  gap: 0.6rem;
+}
+
+.battle-stats div,
+.battle-results div {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.6);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.battle-skills {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.battle-skill-list {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.battle-skill-row {
+  display: flex;
+  justify-content: space-between;
+  gap: 0.75rem;
+  padding: 0.5rem 0.7rem;
+  border-radius: 10px;
+  background: rgba(15, 23, 42, 0.55);
+  border: 1px solid rgba(148, 163, 184, 0.2);
+}
+
+.battle-skill-row span.muted {
+  font-size: 0.85rem;
+}
+
 .character-detail {
   display: grid;
   gap: 1.5rem;
