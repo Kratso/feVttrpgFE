@@ -107,6 +107,17 @@
   gap: 0.75rem;
 }
 
+.token-meta-main {
+  display: grid;
+  gap: 0.2rem;
+}
+
+.token-meta-controls {
+  display: grid;
+  gap: 0.4rem;
+  min-width: 160px;
+}
+
 .token-label {
   display: flex;
   align-items: center;

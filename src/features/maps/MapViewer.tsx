@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { MapRollLog, TileSet, Token } from "../../api/types";
+import type { Character, MapRollLog, TileSet, Token } from "../../api/types";
 import { apiFetch } from "../../api/client";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
@@ -26,6 +26,7 @@ export default function MapViewer() {
   const { maps, selectedMapId, map, tokens, error } = useAppSelector((state) => state.maps);
   const { role } = useAppSelector((state) => state.campaigns);
   const { characters } = useAppSelector((state) => state.characters);
+  const user = useAppSelector((state) => state.auth.user);
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [showTokenList, setShowTokenList] = useState(false);
@@ -123,6 +124,26 @@ export default function MapViewer() {
     socketRef.current?.emit("token:move", { mapId: map.id, tokenId, x, y });
   };
 
+  const handleEquipWeapon = async (characterId: string, inventoryId: string | null) => {
+    await apiFetch<{ character: { id: string } }>(`/characters/${characterId}/equipped-weapon`, {
+      method: "PUT",
+      body: JSON.stringify({ inventoryId }),
+    });
+    const detail = await apiFetch<{ character: Character }>(`/characters/${characterId}`);
+    const updatedCharacter = detail.character;
+    if (!updatedCharacter) return;
+    const token = tokens.find((entry) => entry.character?.id === characterId);
+    if (!token) return;
+    dispatch(updateToken({
+      ...token,
+      character: {
+        ...token.character,
+        ...updatedCharacter,
+        equippedWeaponItem: updatedCharacter.equippedWeaponItem ?? null,
+      },
+    }));
+  };
+
   const handleCreateRoll = async (type: "REGULAR" | "COMBAT") => {
     if (!selectedMapId) return;
     setRollLoading(true);
@@ -189,12 +210,14 @@ export default function MapViewer() {
         <TokenList
           tokens={listTokens}
           role={role}
+          currentUserId={user?.id ?? null}
           selectedTokenId={selectedTokenId}
           visibilityById={tokenVisibility}
           onSelect={setSelectedTokenId}
           onVisibilityChange={(tokenId, visibility) =>
             setTokenVisibility((prev) => ({ ...prev, [tokenId]: visibility }))
           }
+          onEquipWeapon={handleEquipWeapon}
         />
       </FloatingPanel>
 
@@ -208,10 +231,20 @@ export default function MapViewer() {
       >
         <div className="roll-panel">
           <div className="roll-actions">
-            <Button type="button" variant="primary" onClick={() => handleCreateRoll("REGULAR")}>
+            <Button
+              type="button"
+              variant="primary"
+              onClick={() => handleCreateRoll("REGULAR")}
+              disabled={rollLoading}
+            >
               Regular roll
             </Button>
-            <Button type="button" variant="ghost" onClick={() => handleCreateRoll("COMBAT")}>
+            <Button
+              type="button"
+              variant="ghost"
+              onClick={() => handleCreateRoll("COMBAT")}
+              disabled={rollLoading}
+            >
               Combat roll
             </Button>
           </div>
