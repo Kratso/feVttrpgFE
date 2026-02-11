@@ -37,12 +37,13 @@ export default function CharacterAdmin() {
   const members = useAppSelector((state) => state.campaigns.members);
   const classes = useAppSelector((state) => state.classes.classes);
   const weaponTypes = ["sword", "lance", "axe", "bow", "anima", "light", "dark", "staff"];
+  const weaponRankOptions = ["-", "E", "D", "C", "B", "A", "S"];
   const [name, setName] = useState("");
   const [stats, setStats] = useState(defaultStats);
   const [className, setClassName] = useState("");
   const [level, setLevel] = useState(1);
   const [exp, setExp] = useState(0);
-  const [weaponSelections, setWeaponSelections] = useState<Record<string, boolean>>({});
+  const [weaponSelections, setWeaponSelections] = useState<Record<string, string>>({});
   const [kind, setKind] = useState<"PLAYER" | "NPC" | "ENEMY">("PLAYER");
   const [ownerId, setOwnerId] = useState<string>("");
   const [selectedCharacterId, setSelectedCharacterId] = useState<string | null>(null);
@@ -119,9 +120,10 @@ export default function CharacterAdmin() {
     setKind(selectedCharacter.kind ?? "PLAYER");
     setOwnerId(selectedCharacter.owner?.id ?? "");
     setAutoLevel((selectedCharacter.kind ?? "PLAYER") !== "PLAYER");
-    const nextSelections: Record<string, boolean> = {};
+    const nextSelections: Record<string, string> = {};
     weaponTypes.forEach((weapon) => {
-      nextSelections[weapon] = !!selectedCharacter.weaponSkills?.some((skill) => skill.weapon === weapon);
+      const rank = selectedCharacter.weaponSkills?.find((skill) => skill.weapon === weapon)?.rank;
+      nextSelections[weapon] = rank ?? "-";
     });
     setWeaponSelections(nextSelections);
   }, [selectedCharacter]);
@@ -157,10 +159,10 @@ export default function CharacterAdmin() {
       }
     }
     if (match?.weaponRanks) {
-      const nextSelections: Record<string, boolean> = {};
+      const nextSelections: Record<string, string> = {};
       weaponTypes.forEach((weapon) => {
         const rank = match.weaponRanks?.[weapon];
-        nextSelections[weapon] = !!rank && rank !== "-";
+        nextSelections[weapon] = rank && rank !== "-" ? rank : "-";
       });
       setWeaponSelections(nextSelections);
     }
@@ -183,10 +185,10 @@ export default function CharacterAdmin() {
     try {
       const match = classes.find((gameClass) => gameClass.name === className);
       const weaponSkills = weaponTypes
-        .filter((weapon) => weaponSelections[weapon])
+        .filter((weapon) => weaponSelections[weapon] && weaponSelections[weapon] !== "-")
         .map((weapon) => ({
           weapon,
-          rank: match?.weaponRanks?.[weapon] ?? "E",
+          rank: weaponSelections[weapon] ?? match?.weaponRanks?.[weapon] ?? "E",
         }));
 
       await dispatch(
@@ -216,10 +218,10 @@ export default function CharacterAdmin() {
     try {
       const match = classes.find((gameClass) => gameClass.name === className);
       const weaponSkills = weaponTypes
-        .filter((weapon) => weaponSelections[weapon])
+        .filter((weapon) => weaponSelections[weapon] && weaponSelections[weapon] !== "-")
         .map((weapon) => ({
           weapon,
-          rank: match?.weaponRanks?.[weapon] ?? "E",
+          rank: weaponSelections[weapon] ?? match?.weaponRanks?.[weapon] ?? "E",
         }));
 
       await dispatch(
@@ -300,19 +302,24 @@ export default function CharacterAdmin() {
         </div>
         <div className="stats-grid">
           {weaponTypes.map((weapon, idx) => (
-            <label key={`${weapon}-${idx}`} className="check-field">
-              <input
-                type="checkbox"
-                checked={!!weaponSelections[weapon]}
+            <div key={`${weapon}-${idx}`} className="rank-field">
+              <span className="rank-label">{weapon}</span>
+              <SelectInput
+                value={weaponSelections[weapon] ?? "-"}
                 onChange={(e) =>
                   setWeaponSelections((prev) => ({
                     ...prev,
-                    [weapon]: e.target.checked,
+                    [weapon]: e.target.value,
                   }))
                 }
-              />
-              <span>{weapon}</span>
-            </label>
+              >
+                {weaponRankOptions.map((rank) => (
+                  <option key={`${weapon}-${rank}`} value={rank}>
+                    {rank}
+                  </option>
+                ))}
+              </SelectInput>
+            </div>
           ))}
         </div>
         <Field label="Type">
