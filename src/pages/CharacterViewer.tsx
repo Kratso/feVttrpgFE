@@ -321,6 +321,15 @@ export default function CharacterViewer() {
     }));
   };
 
+  const handleBlessedToggle = (inventoryId: string, nextValue: boolean) => {
+    if (!selectedCharacter) return;
+    dispatch(updateInventoryItem({
+      characterId: selectedCharacter.id,
+      inventoryId,
+      blessed: nextValue,
+    }));
+  };
+
   const handleSlotChange = async (slotIndex: number, nextItemId: string) => {
     if (!selectedCharacter || !canEditItems) return;
     const current = slotItems[slotIndex];
@@ -534,12 +543,28 @@ export default function CharacterViewer() {
                             </>
                           )}
                         </div>
+                        {isWeapon && entry && (
+                          <label className="weapon-blessed-toggle">
+                            <input
+                              type="checkbox"
+                              checked={!!entry.blessed}
+                              onChange={(event) => handleBlessedToggle(entry.id, event.target.checked)}
+                              disabled={!canEditInventory}
+                            />
+                            <span>Blessed</span>
+                          </label>
+                        )}
                         {isWeapon && item && (
                           <div className="weapon-tooltip" role="tooltip">
                             <div className="weapon-tooltip-header">
                               <strong>{item.name}</strong>
                               <span className="muted">{item.weaponRank ?? "-"}</span>
                             </div>
+                            {entry?.blessed && (
+                              <div className="weapon-tooltip-flags">
+                                <span className="muted">Blessed</span>
+                              </div>
+                            )}
                             <div className="weapon-tooltip-stats">
                               <div><span>Mt</span><strong>{item.might ?? 0}</strong></div>
                               <div><span>Hit</span><strong>{item.hit ?? 0}</strong></div>

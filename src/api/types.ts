@@ -43,6 +43,7 @@ export type CharacterItem = {
   id: string;
   itemId: string;
   uses?: number | null;
+  blessed?: boolean | null;
   sortOrder: number;
   item: Item;
 };

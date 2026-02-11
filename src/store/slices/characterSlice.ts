@@ -93,12 +93,20 @@ export const removeInventoryItem = createAsyncThunk(
 
 export const updateInventoryItem = createAsyncThunk(
   "characters/updateInventoryItem",
-  async (payload: { characterId: string; inventoryId: string; uses?: number | null }) => {
+  async (payload: {
+    characterId: string;
+    inventoryId: string;
+    uses?: number | null;
+    blessed?: boolean | null;
+  }) => {
     const data = await apiFetch<{ inventoryItem: CharacterItem }>(
       `/characters/${payload.characterId}/inventory/${payload.inventoryId}`,
       {
         method: "PATCH",
-        body: JSON.stringify({ uses: payload.uses ?? null }),
+        body: JSON.stringify({
+          uses: payload.uses ?? null,
+          blessed: payload.blessed === undefined ? undefined : payload.blessed,
+        }),
       }
     );
     return { characterId: payload.characterId, inventoryItem: data.inventoryItem };
