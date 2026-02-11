@@ -194,3 +194,45 @@
   font-size: 0.8rem;
   color: rgba(226, 232, 240, 0.85);
 }
+
+.roll-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.roll-actions {
+  display: grid;
+  gap: 0.6rem;
+}
+
+.roll-log {
+  display: grid;
+  gap: 0.5rem;
+  max-height: 240px;
+  overflow: auto;
+  padding-right: 0.25rem;
+}
+
+.roll-row {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  gap: 0.6rem;
+  align-items: center;
+  padding: 0.5rem 0.65rem;
+  border-radius: 10px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(15, 23, 42, 0.6);
+  font-size: 0.85rem;
+}
+
+.roll-user {
+  font-weight: 600;
+}
+
+.roll-type {
+  color: rgba(226, 232, 240, 0.75);
+}
+
+.roll-result {
+  font-size: 1rem;
+}

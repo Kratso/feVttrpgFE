@@ -8,6 +8,8 @@ type FloatingPanelProps = {
   onToggle: () => void;
   children: ReactNode;
   size?: "default" | "wide";
+  toggleTop?: number;
+  panelTop?: number;
 };
 
 export default function FloatingPanel({
@@ -17,14 +19,24 @@ export default function FloatingPanel({
   onToggle,
   children,
   size = "default",
+  toggleTop = 180,
+  panelTop = 140,
 }: FloatingPanelProps) {
   return (
     <>
-      <Button type="button" className={`floating-toggle ${side}`} onClick={onToggle}>
+      <Button
+        type="button"
+        className={`floating-toggle ${side}`}
+        onClick={onToggle}
+        style={{ top: `${toggleTop}px` }}
+      >
         {title}
       </Button>
       {isOpen && (
-        <aside className={`floating-shell ${side} ${size === "wide" ? "wide" : ""}`.trim()}>
+        <aside
+          className={`floating-shell ${side} ${size === "wide" ? "wide" : ""}`.trim()}
+          style={{ top: `${panelTop}px` }}
+        >
           <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center" }}>
             <h3 style={{ margin: 0 }}>{title}</h3>
             <Button type="button" variant="ghost" onClick={onToggle}>

@@ -101,6 +101,18 @@ export type MapInfo = {
   tileGrid?: Array<Array<string | null>> | null;
 };
 
+export type MapRollLog = {
+  id: string;
+  mapId: string;
+  type: "REGULAR" | "COMBAT";
+  result: number;
+  createdAt: string;
+  user: {
+    id: string;
+    displayName: string;
+  };
+};
+
 export type Token = {
   id: string;
   label: string;

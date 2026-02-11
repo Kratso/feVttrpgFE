@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { useParams } from "react-router-dom";
-import type { TileSet, Token } from "../../api/types";
+import type { MapRollLog, TileSet, Token } from "../../api/types";
 import { apiFetch } from "../../api/client";
 import { useAppDispatch, useAppSelector } from "../../store/hooks";
 import {
@@ -11,6 +11,7 @@ import {
 import Panel from "../../components/ui/Panel";
 import ErrorBanner from "../../components/ui/ErrorBanner";
 import FloatingPanel from "../../components/ui/FloatingPanel";
+import Button from "../../components/ui/Button";
 import MapToolbar from "./components/MapToolbar";
 import CreateTokenForm from "./components/CreateTokenForm";
 import MapStage from "./components/MapStage";
@@ -28,8 +29,11 @@ export default function MapViewer() {
   const [tileSets, setTileSets] = useState<TileSet[]>([]);
   const [showTokenForm, setShowTokenForm] = useState(false);
   const [showTokenList, setShowTokenList] = useState(false);
+  const [showRoller, setShowRoller] = useState(false);
   const [selectedTokenId, setSelectedTokenId] = useState<string | null>(null);
   const [tokenVisibility, setTokenVisibility] = useState<Record<string, TokenVisibility>>({});
+  const [rollLogs, setRollLogs] = useState<MapRollLog[]>([]);
+  const [rollLoading, setRollLoading] = useState(false);
 
   useMapBootstrap(campaignId);
   useMapDetail(selectedMapId);
@@ -57,6 +61,18 @@ export default function MapViewer() {
     }
   }, [selectedTokenId, tokens]);
 
+  useEffect(() => {
+    if (!selectedMapId) {
+      setRollLogs([]);
+      return;
+    }
+    setRollLoading(true);
+    apiFetch<{ rolls: MapRollLog[] }>(`/maps/${selectedMapId}/rolls`)
+      .then((data) => setRollLogs(data.rolls))
+      .catch(() => setRollLogs([]))
+      .finally(() => setRollLoading(false));
+  }, [selectedMapId]);
+
   const handleSocketTokenMoved = useCallback(
     (token: Token) => {
       dispatch(updateToken(token));
@@ -64,7 +80,14 @@ export default function MapViewer() {
     [dispatch]
   );
 
-  const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved);
+  const handleSocketRollCreated = useCallback((roll: MapRollLog) => {
+    setRollLogs((prev) => {
+      if (prev.some((entry) => entry.id === roll.id)) return prev;
+      return [roll, ...prev];
+    });
+  }, []);
+
+  const { socketRef } = useMapSocket(selectedMapId, handleSocketTokenMoved, handleSocketRollCreated);
 
   const handleCreateToken = async (payload: {
     label: string;
@@ -100,6 +123,23 @@ export default function MapViewer() {
     socketRef.current?.emit("token:move", { mapId: map.id, tokenId, x, y });
   };
 
+  const handleCreateRoll = async (type: "REGULAR" | "COMBAT") => {
+    if (!selectedMapId) return;
+    setRollLoading(true);
+    try {
+      const data = await apiFetch<{ roll: MapRollLog }>(`/maps/${selectedMapId}/rolls`, {
+        method: "POST",
+        body: JSON.stringify({ type }),
+      });
+      setRollLogs((prev) => {
+        if (prev.some((entry) => entry.id === data.roll.id)) return prev;
+        return [data.roll, ...prev];
+      });
+    } finally {
+      setRollLoading(false);
+    }
+  };
+
   const visibleTokens = useMemo(() => {
     return tokens.filter((token) => {
       const visibility = tokenVisibility[token.id] ?? "PUBLIC";
@@ -131,6 +171,8 @@ export default function MapViewer() {
           title="Add token"
           isOpen={showTokenForm}
           onToggle={() => setShowTokenForm((open) => !open)}
+          toggleTop={180}
+          panelTop={140}
         >
           <CreateTokenForm onCreateToken={handleCreateToken} characters={characters} />
         </FloatingPanel>
@@ -141,6 +183,8 @@ export default function MapViewer() {
         title="Tokens"
         isOpen={showTokenList}
         onToggle={() => setShowTokenList((open) => !open)}
+        toggleTop={180}
+        panelTop={140}
       >
         <TokenList
           tokens={listTokens}
@@ -152,6 +196,43 @@ export default function MapViewer() {
             setTokenVisibility((prev) => ({ ...prev, [tokenId]: visibility }))
           }
         />
+      </FloatingPanel>
+
+      <FloatingPanel
+        side="right"
+        title="Die roller"
+        isOpen={showRoller}
+        onToggle={() => setShowRoller((open) => !open)}
+        toggleTop={340}
+        panelTop={300}
+      >
+        <div className="roll-panel">
+          <div className="roll-actions">
+            <Button type="button" variant="primary" onClick={() => handleCreateRoll("REGULAR")}>
+              Regular roll
+            </Button>
+            <Button type="button" variant="ghost" onClick={() => handleCreateRoll("COMBAT")}>
+              Combat roll
+            </Button>
+          </div>
+          {rollLoading && rollLogs.length === 0 ? (
+            <p className="muted">Loading rolls...</p>
+          ) : rollLogs.length === 0 ? (
+            <p className="muted">No rolls recorded yet.</p>
+          ) : (
+            <div className="roll-log">
+              {rollLogs.map((roll) => (
+                <div key={roll.id} className="roll-row">
+                  <span className="roll-user">{roll.user.displayName}</span>
+                  <span className="roll-type">
+                    {roll.type === "REGULAR" ? "Regular" : "Combat"}
+                  </span>
+                  <strong className="roll-result">{roll.result}</strong>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </FloatingPanel>
 
       {map && (
