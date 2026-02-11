@@ -1,6 +1,9 @@
-import type { KeyboardEvent } from "react";
+import { useState } from "react";
+import type { KeyboardEvent, MouseEvent } from "react";
+import { createPortal } from "react-dom";
 import type { Token } from "../../../api/types";
 import SelectInput from "../../../components/ui/SelectInput";
+import TokenTooltip from "./TokenTooltip";
 
 export type TokenVisibility = "PUBLIC" | "DM_ONLY" | "HIDDEN";
 
@@ -34,52 +37,80 @@ export default function TokenList({
   onSelect,
   onVisibilityChange,
 }: TokenListProps) {
+  const [hoveredToken, setHoveredToken] = useState<Token | null>(null);
+  const [tooltipPos, setTooltipPos] = useState<{ x: number; y: number } | null>(null);
+
+  const handleHover = (event: MouseEvent<HTMLDivElement>, token: Token) => {
+    const rect = event.currentTarget.getBoundingClientRect();
+    setHoveredToken(token);
+    setTooltipPos({ x: rect.left + rect.width / 2, y: rect.top });
+  };
+
+  const handleHoverEnd = () => {
+    setHoveredToken(null);
+    setTooltipPos(null);
+  };
+
   if (tokens.length === 0) {
     return <p className="muted">No tokens on this map yet.</p>;
   }
 
   return (
-    <div className="token-list">
-      {tokens.map((token) => {
-        const visibility = visibilityById[token.id] ?? "PUBLIC";
-        const isSelected = token.id === selectedTokenId;
-        const characterName = token.character?.name ?? "Unassigned";
-        const ownerName = token.character?.owner?.displayName ?? "Unknown";
-        return (
-          <div
-            key={token.id}
-            role="button"
-            tabIndex={0}
-            className={`token-row ${isSelected ? "selected" : ""}`.trim()}
-            onClick={() => onSelect(token.id)}
-            onKeyDown={(event) => handleKeySelect(event, token.id, onSelect)}
-          >
-            <div className="token-meta">
-              <div className="token-label">
-                <span className="token-swatch" style={{ backgroundColor: token.color }} />
-                <strong>{token.label}</strong>
-                <span className="muted">({token.x}, {token.y})</span>
+    <>
+      <div className="token-list">
+        {tokens.map((token) => {
+          const visibility = visibilityById[token.id] ?? "PUBLIC";
+          const isSelected = token.id === selectedTokenId;
+          const characterName = token.character?.name ?? "Unassigned";
+          const ownerName = token.character?.owner?.displayName ?? "Unknown";
+          return (
+            <div
+              key={token.id}
+              role="button"
+              tabIndex={0}
+              className={`token-row ${isSelected ? "selected" : ""}`.trim()}
+              onClick={() => onSelect(token.id)}
+              onKeyDown={(event) => handleKeySelect(event, token.id, onSelect)}
+              onMouseEnter={(event) => handleHover(event, token)}
+              onMouseMove={(event) => handleHover(event, token)}
+              onMouseLeave={handleHoverEnd}
+            >
+              <div className="token-meta">
+                <div className="token-label">
+                  <span className="token-swatch" style={{ backgroundColor: token.color }} />
+                  <strong>{token.label}</strong>
+                  <span className="muted">({token.x}, {token.y})</span>
+                </div>
+                <div className="token-character">
+                  <span className="muted">{characterName}</span>
+                  <span className="muted">{ownerName}</span>
+                </div>
+                {role === "DM" ? (
+                  <SelectInput
+                    value={visibility}
+                    onChange={(event) => onVisibilityChange(token.id, event.target.value as TokenVisibility)}
+                  >
+                    <option value="PUBLIC">Viewable for all</option>
+                    <option value="DM_ONLY">DM only</option>
+                    <option value="HIDDEN">Invisible</option>
+                  </SelectInput>
+                ) : (
+                  <span className="muted">{visibilityLabel[visibility]}</span>
+                )}
               </div>
-              <div className="token-character">
-                <span className="muted">{characterName}</span>
-                <span className="muted">{ownerName}</span>
-              </div>
-              {role === "DM" ? (
-                <SelectInput
-                  value={visibility}
-                  onChange={(event) => onVisibilityChange(token.id, event.target.value as TokenVisibility)}
-                >
-                  <option value="PUBLIC">Viewable for all</option>
-                  <option value="DM_ONLY">DM only</option>
-                  <option value="HIDDEN">Invisible</option>
-                </SelectInput>
-              ) : (
-                <span className="muted">{visibilityLabel[visibility]}</span>
-              )}
             </div>
-          </div>
-        );
-      })}
-    </div>
+          );
+        })}
+      </div>
+      {hoveredToken && tooltipPos &&
+        createPortal(
+          <TokenTooltip
+            token={hoveredToken}
+            className="floating"
+            style={{ left: tooltipPos.x, top: tooltipPos.y }}
+          />,
+          document.body
+        )}
+    </>
   );
 }

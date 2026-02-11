@@ -125,9 +125,22 @@ const mapSlice = createSlice({
       state.selectedMapId = action.payload;
     },
     updateToken(state, action: { payload: Token }) {
-      state.tokens = state.tokens.map((token) =>
-        token.id === action.payload.id ? action.payload : token
-      );
+      state.tokens = state.tokens.map((token) => {
+        if (token.id !== action.payload.id) return token;
+        if (!token.character) return action.payload;
+        if (!action.payload.character) {
+          return { ...action.payload, character: token.character };
+        }
+        return {
+          ...action.payload,
+          character: {
+            ...token.character,
+            ...action.payload.character,
+            equippedWeaponItem:
+              action.payload.character.equippedWeaponItem ?? token.character.equippedWeaponItem ?? null,
+          },
+        };
+      });
     },
   },
   extraReducers: (builder) => {

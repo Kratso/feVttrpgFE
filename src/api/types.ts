@@ -30,6 +30,7 @@ export type Character = {
   currentHp?: number | null;
   weaponSkills?: Array<{ weapon: string; rank: string }>;
   equippedWeaponItemId?: string | null;
+  equippedWeaponItem?: CharacterItem | null;
   inventory?: CharacterItem[];
   skills?: CharacterSkill[];
   owner?: {
@@ -108,6 +109,10 @@ export type Token = {
   character?: {
     id: string;
     name: string;
+    stats?: CharacterStats;
+    level?: number | null;
+    currentHp?: number | null;
+    equippedWeaponItem?: CharacterItem | null;
     owner?: {
       id: string;
       displayName: string;

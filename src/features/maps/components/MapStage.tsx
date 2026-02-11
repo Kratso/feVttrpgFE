@@ -1,6 +1,7 @@
 import { useMemo, useRef } from "react";
 import type { CSSProperties, MouseEvent } from "react";
 import type { MapInfo, TileSet, Token } from "../../../api/types";
+import TokenTooltip from "./TokenTooltip";
 
 type MapStageProps = {
   map: MapInfo;
@@ -106,18 +107,25 @@ export default function MapStage({
       {tokens.map((token) => (
         <div
           key={token.id}
-          className={`token ${selectedTokenId === token.id ? "selected" : ""}`.trim()}
+          className={`token-shell ${selectedTokenId === token.id ? "selected" : ""}`.trim()}
           style={{
             transform: `translate(${map.gridOffsetX + token.x * gridSizeX}px, ${
               map.gridOffsetY + token.y * gridSizeY
             }px)`,
             width: `${gridSizeX}px`,
             height: `${gridSizeY}px`,
-            backgroundColor: token.color,
           }}
-          onMouseDown={() => startDrag(token.id)}
         >
-          {token.label}
+          <div
+            className="token"
+            style={{
+              backgroundColor: token.color,
+            }}
+            onMouseDown={() => startDrag(token.id)}
+          >
+            {token.label}
+          </div>
+          <TokenTooltip token={token} />
         </div>
       ))}
     </div>
