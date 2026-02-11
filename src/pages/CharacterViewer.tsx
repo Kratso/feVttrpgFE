@@ -25,6 +25,7 @@ import TextInput from "../components/ui/TextInput";
 import CharacterBanner from "../components/CharacterBanner";
 import { getCombatStats, getDisplayStats } from "../utils/character";
 import { getItemRangeLabel } from "../utils/item";
+import { canEquipWeaponForCharacter } from "../utils/weapon";
 import type { CharacterItem, Item } from "../api/types";
 
 export default function CharacterViewer() {
@@ -94,22 +95,8 @@ export default function CharacterViewer() {
   }, [inventoryDraft]);
 
   const canEquipWeapon = useMemo(() => {
-    const rankOrder = ["E", "D", "C", "B", "A", "S"];
     return (entry: CharacterItem) => {
-      if (!selectedCharacter?.className) return false;
-      const item = entry.item;
-      if (item.type?.toLowerCase() === "laguz") {
-        if (item.classRestriction && item.classRestriction !== selectedCharacter.className) {
-          return false;
-        }
-      }
-
-      const requiredRank = item.weaponRank ?? "E";
-      const currentRank = selectedCharacter.weaponSkills?.find(
-        (skill) => skill.weapon.toLowerCase() === item.type?.toLowerCase()
-      )?.rank;
-      if (!currentRank) return false;
-      return rankOrder.indexOf(currentRank) >= rankOrder.indexOf(requiredRank);
+      return canEquipWeaponForCharacter(selectedCharacter, entry);
     };
   }, [selectedCharacter?.className, selectedCharacter?.weaponSkills]);
 

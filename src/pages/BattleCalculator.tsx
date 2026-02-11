@@ -16,6 +16,7 @@ import { getDisplayStats } from "../utils/character";
 import { getClassStatsAtLevel } from "../utils/leveling";
 import { buildBattleSummary } from "../utils/battle";
 import { getBattleSkillSummaries, getDeterministicModifiers } from "../utils/skills";
+import { canUseWeaponForClass } from "../utils/weapon";
 
 const defaultStats = {
   hp: 30,
@@ -30,20 +31,8 @@ const defaultStats = {
   movement: 5,
 };
 
-const rankOrder = ["E", "D", "C", "B", "A", "S"];
-
 const getWeaponOptionsFromInventory = (inventory: CharacterItem[]) =>
   inventory.filter((entry) => entry.item.category === "WEAPON");
-
-const canUseWeapon = (gameClass: GameClass | null, item: Item) => {
-  if (!gameClass?.weaponRanks) return false;
-  if (item.classRestriction && item.classRestriction !== gameClass.name) return false;
-  const weaponType = item.type?.toLowerCase() ?? "";
-  const classRank = gameClass.weaponRanks?.[weaponType];
-  if (!classRank || classRank === "-") return false;
-  const requiredRank = item.weaponRank ?? "E";
-  return rankOrder.indexOf(classRank) >= rankOrder.indexOf(requiredRank);
-};
 
 const buildGenericCharacter = (name: string, stats: Record<string, number>, level: number): Character => ({
   id: name.toLowerCase().replace(/\s+/g, "-"),
@@ -140,11 +129,11 @@ export default function BattleCalculator() {
   const rightInventoryWeapons = getWeaponOptionsFromInventory(rightDetail?.inventory ?? []);
 
   const leftGenericWeapons = useMemo(
-    () => items.filter((item) => item.category === "WEAPON" && canUseWeapon(leftClass, item)),
+    () => items.filter((item) => item.category === "WEAPON" && canUseWeaponForClass(leftClass, item)),
     [items, leftClass]
   );
   const rightGenericWeapons = useMemo(
-    () => items.filter((item) => item.category === "WEAPON" && canUseWeapon(rightClass, item)),
+    () => items.filter((item) => item.category === "WEAPON" && canUseWeaponForClass(rightClass, item)),
     [items, rightClass]
   );
 

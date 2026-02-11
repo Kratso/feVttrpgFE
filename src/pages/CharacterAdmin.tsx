@@ -16,6 +16,7 @@ import Button from "../components/ui/Button";
 import ErrorBanner from "../components/ui/ErrorBanner";
 import SelectInput from "../components/ui/SelectInput";
 import { getDisplayStats } from "../utils/character";
+import { applyGrowths } from "../utils/leveling";
 
 const defaultStats = {
   hp: 30,
@@ -127,21 +128,6 @@ export default function CharacterAdmin() {
     });
     setWeaponSelections(nextSelections);
   }, [selectedCharacter]);
-
-  const applyGrowths = (
-    baseStats: Record<string, number>,
-    growths: Record<string, number> | undefined,
-    delta: number
-  ) => {
-    if (!growths || delta === 0) return baseStats;
-    const next: Record<string, number> = { ...baseStats };
-    Object.keys(baseStats).forEach((key) => {
-      const growth = growths[key] ?? 0;
-      const adjustment = Math.round((delta * growth) / 100);
-      next[key] = (baseStats[key] ?? 0) + adjustment;
-    });
-    return next;
-  };
 
   const handleClassChange = (value: string) => {
     setClassName(value);
